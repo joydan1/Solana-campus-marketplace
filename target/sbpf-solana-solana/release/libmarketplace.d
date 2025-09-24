@@ -1,0 +1,1 @@
+/mnt/c/Users/hp/Desktop/Solana-campus-marketplace/contracts/marketplace/target/sbpf-solana-solana/release/libmarketplace.rlib: /mnt/c/Users/hp/Desktop/Solana-campus-marketplace/contracts/marketplace/programs/marketplace/src/lib.rs

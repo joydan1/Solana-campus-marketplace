@@ -1,0 +1,18 @@
+.anchor/
+.DS_Store
+target/deploy/
+target/debug/
+target/release/
+**/*.rs.bk
+node_modules/
+test-ledger/
+.yarn/
+.env
+package-lock.json
+yarn-error.log
+
+# Keep IDL + TS bindings tracked
+!target/idl/
+!target/types/
+
+
