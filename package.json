@@ -1,0 +1,11 @@
+{
+  "name": "marketplace",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "ts-mocha": "project-serum/anchor",
+    "typescript": "^5.9.2"
+  }
+}
