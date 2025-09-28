@@ -1,7 +1,8 @@
-/* ========= Navbar Mobile Toggle ========= */
+/* ========= Imports ========= */
 import { supabase } from './supabaseclient.js';
-import { buyItem } from './wallet.js';
+import { connectWallet, buyItem } from './wallet.js';
 
+/* ========= Navbar Mobile Toggle ========= */
 const bar = document.getElementById('bar');
 const nav = document.getElementById('navbar');
 const close = document.getElementById('close');
@@ -26,6 +27,7 @@ const products = document.querySelectorAll('.pro');
 products.forEach((product) => {
     const mainImg = product.querySelector('img');
     const smallImgs = product.querySelectorAll('.small-img');
+
     smallImgs.forEach((smallImg) => {
         smallImg.addEventListener('click', () => {
             mainImg.src = smallImg.src;
@@ -59,13 +61,11 @@ if (uploadItemForm) {
     const auctionEndDate = document.getElementById('auction-end-date').value;
 
     if (!itemName || !itemDescription || !itemPrice || !itemImage || !auctionEndDate) {
-      console.error("Please fill out all fields");
       alert("Please fill out all fields");
       return;
     }
 
     if (!itemImage.type.startsWith("image/")) {
-      console.error("Invalid file type. Only images are allowed.");
       alert("Invalid file type. Only images are allowed.");
       return;
     }
@@ -81,7 +81,6 @@ if (uploadItemForm) {
       const response = await fetch('/api/upload-item', { method: 'POST', body: formData });
       const data = await response.json();
 
-      // Add item to auction list
       const itemHtml = `
         <li>
           <h2>${data.itemName}</h2>
@@ -96,23 +95,18 @@ if (uploadItemForm) {
       `;
       auctionItemsList.innerHTML += itemHtml;
 
-      // Attach click handler to newly added Buy button
+      // Attach Buy button to new item
       const lastBtn = auctionItemsList.querySelector('li:last-child .buyBtn');
       lastBtn.addEventListener('click', async () => {
         const itemPubkey = lastBtn.dataset.itemPubkey;
-        const sellerPubkey = lastBtn.dataset.sellerPubkey;
+        const sellerPubkey = lastBtn.dataset.sellerPubkey || null;
 
-        if (!itemPubkey || !sellerPubkey) {
-          alert('Missing item or seller public key!');
-          return;
-        }
-
+        if (!itemPubkey) return alert('Missing item public key!');
         try {
-          console.log('Attempting to buy item:', itemPubkey, 'from seller:', sellerPubkey);
           await buyItem(itemPubkey, sellerPubkey);
           alert('✅ Purchase successful!');
         } catch (err) {
-          console.error('Purchase failed:', err);
+          console.error(err);
           alert('Purchase failed. Check console for details.');
         }
       });
@@ -128,61 +122,52 @@ const registerForm = document.getElementById('register-form');
 const errorMessage = document.getElementById('error-message');
 
 if (registerForm) {
-    registerForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
+  registerForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
 
-        const username = document.getElementById('username').value.trim();
-        const email = document.getElementById('email').value.trim();
-        const password = document.getElementById('password').value;
-        const confirmPassword = document.getElementById('confirm-password').value;
+    const username = document.getElementById('username').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const confirmPassword = document.getElementById('confirm-password').value;
 
-        if (!username || !email || !password || !confirmPassword) {
-            errorMessage.textContent = 'Please fill out all fields';
-            return;
-        }
+    if (!username || !email || !password || !confirmPassword) {
+      errorMessage.textContent = 'Please fill out all fields';
+      return;
+    }
 
-        if (password !== confirmPassword) {
-            errorMessage.textContent = 'Passwords do not match';
-            return;
-        }
+    if (password !== confirmPassword) {
+      errorMessage.textContent = 'Passwords do not match';
+      return;
+    }
 
-        try {
-            const response = await fetch('/api/register', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, email, password })
-            });
-            const data = await response.json();
-            console.log(data);
-            alert('Registration successful!');
-        } catch (err) {
-            console.error(err);
-            errorMessage.textContent = 'Error registering user';
-        }
-    });
+    try {
+      const response = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, email, password })
+      });
+      const data = await response.json();
+      console.log(data);
+      alert('Registration successful!');
+    } catch (err) {
+      console.error(err);
+      errorMessage.textContent = 'Error registering user';
+    }
+  });
 }
 
 /* ========= Solana Wallet Integration ========= */
 const connectWalletBtn = document.getElementById("connectWalletBtn");
-
-async function connectWallet() {
-    if (window.solana && window.solana.isPhantom) {
-        try {
-            const resp = await window.solana.connect();
-            const address = resp.publicKey.toString();
-            connectWalletBtn.textContent = `Connected: ${address.slice(0,4)}...${address.slice(-4)}`;
-            console.log("Connected with Public Key:", address);
-        } catch (err) {
-            console.error("Wallet connection failed:", err);
-            alert("Wallet connection failed. Check console for details.");
-        }
-    } else {
-        alert("Phantom wallet not found! Please install it from https://phantom.app/");
-        window.open("https://phantom.app/", "_blank");
+if (connectWalletBtn) {
+  connectWalletBtn.addEventListener('click', async () => {
+    try {
+      const pubKey = await connectWallet();
+      connectWalletBtn.textContent = `Connected: ${pubKey.slice(0,4)}...${pubKey.slice(-4)}`;
+    } catch (err) {
+      alert('Wallet connection failed. Check console.');
     }
+  });
 }
-
-if (connectWalletBtn) connectWalletBtn.addEventListener("click", connectWallet);
 
 /* ========= Cart Functionality ========= */
 let cartCount = 0;
@@ -204,30 +189,29 @@ cartIcon.style.position = 'relative';
 cartIcon.appendChild(cartBadge);
 
 document.querySelectorAll('.fa-basket-shopping').forEach((btn) => {
-    btn.addEventListener('click', () => {
-        cartCount++;
-        cartBadge.textContent = cartCount;
-        const productName = btn.closest('.pro').querySelector('h5').textContent;
-        alert(`Added "${productName}" to cart!`);
-        console.log('Item added to cart:', productName);
-    });
+  btn.addEventListener('click', () => {
+    cartCount++;
+    cartBadge.textContent = cartCount;
+    const productName = btn.closest('.pro').querySelector('h5').textContent;
+    alert(`Added "${productName}" to cart!`);
+  });
 });
 
 /* ========= Add to Cart from Products ========= */
 document.querySelectorAll('.pro a').forEach((btn) => {
-    btn.addEventListener('click', (e) => {
-        e.preventDefault();
-        const card = btn.closest('.pro');
-        const title = card.querySelector('h5').innerText;
-        const price = parseFloat(card.querySelector('h4').innerText.replace('Sol','').trim());
-        const imgSrc = card.querySelector('img').src;
+  btn.addEventListener('click', (e) => {
+    e.preventDefault();
+    const card = btn.closest('.pro');
+    const title = card.querySelector('h5').innerText;
+    const price = parseFloat(card.querySelector('h4').innerText.replace('Sol','').trim());
+    const imgSrc = card.querySelector('img').src;
 
-        let cart = JSON.parse(localStorage.getItem('cart')) || [];
-        cart.push({ title, price, imgSrc, quantity:1 });
-        localStorage.setItem('cart', JSON.stringify(cart));
+    let cart = JSON.parse(localStorage.getItem('cart')) || [];
+    cart.push({ title, price, imgSrc, quantity:1 });
+    localStorage.setItem('cart', JSON.stringify(cart));
 
-        alert(`${title} added to cart!`);
-    });
+    alert(`${title} added to cart!`);
+  });
 });
 
 /* ========= Product Modal ========= */
@@ -257,31 +241,26 @@ modal.appendChild(modalImg);
 modal.addEventListener('click', () => modal.style.display = 'none');
 
 document.querySelectorAll('.pro img').forEach(img => {
-    img.style.cursor = 'pointer';
-    img.addEventListener('click', () => {
-        modalImg.src = img.src;
-        modal.style.display = 'flex';
-    });
+  img.style.cursor = 'pointer';
+  img.addEventListener('click', () => {
+    modalImg.src = img.src;
+    modal.style.display = 'flex';
+  });
 });
 
-/* ========= Buy Button ========= */
+/* ========= Buy Button (Pre-existing items) ========= */
 document.querySelectorAll('.buyBtn').forEach((btn) => {
-    btn.addEventListener('click', async () => {
-        const itemPubkey = btn.dataset.itemPubkey;
-        const sellerPubkey = btn.dataset.sellerPubkey;
+  btn.addEventListener('click', async () => {
+    const itemPubkey = btn.dataset.itemPubkey;
+    const sellerPubkey = btn.dataset.sellerPubkey || null;
 
-        if (!itemPubkey || !sellerPubkey) {
-            alert('Missing item or seller public key!');
-            return;
-        }
-
-        try {
-            console.log('Buying item:', itemPubkey, sellerPubkey);
-            await buyItem(itemPubkey, sellerPubkey);
-            alert('✅ Purchase successful!');
-        } catch (err) {
-            console.error(err);
-            alert('Purchase failed. Check console for details.');
-        }
-    });
+    if (!itemPubkey) return alert('Missing item public key!');
+    try {
+      await buyItem(itemPubkey, sellerPubkey);
+      alert('✅ Purchase successful!');
+    } catch (err) {
+      console.error(err);
+      alert('Purchase failed. Check console for details.');
+    }
+  });
 });
