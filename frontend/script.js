@@ -1,4 +1,3 @@
-
 /* ========= Navbar Mobile Toggle ========= */
 import { supabase } from '/supabaseclient.js';
 import { buyItem } from '/wallet.js';
@@ -51,50 +50,76 @@ const uploadItemForm = document.getElementById('upload-item-form');
 const auctionItemsList = document.getElementById('auction-items');
 
 if (uploadItemForm) {
-    uploadItemForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const itemName = document.getElementById('item-name').value;
-        const itemDescription = document.getElementById('item-description').value;
-        const itemPrice = document.getElementById('item-price').value;
-        const itemImage = document.getElementById('item-image').files[0];
-        const auctionEndDate = document.getElementById('auction-end-date').value;
+  uploadItemForm.addEventListener('submit', (e) => {
+    e.preventDefault();
 
-        if (!itemName || !itemDescription || !itemPrice || !itemImage || !auctionEndDate) {
-            console.error("Please fill out all fields");
-            return;
+    const itemName = document.getElementById('item-name').value;
+    const itemDescription = document.getElementById('item-description').value;
+    const itemPrice = document.getElementById('item-price').value;
+    const itemImage = document.getElementById('item-image').files[0];
+    const auctionEndDate = document.getElementById('auction-end-date').value;
+
+    if (!itemName || !itemDescription || !itemPrice || !itemImage || !auctionEndDate) {
+      console.error("Please fill out all fields");
+      return;
+    }
+
+    if (!itemImage.type.startsWith("image/")) {
+      console.error("Invalid file type. Only images are allowed.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('itemName', itemName);
+    formData.append('itemDescription', itemDescription);
+    formData.append('itemPrice', itemPrice);
+    formData.append('itemImage', itemImage);
+    formData.append('auctionEndDate', auctionEndDate);
+
+    fetch('/api/upload-item', {
+      method: 'POST',
+      body: formData
+    })
+    .then((response) => response.json())
+    .then((data) => {
+      const itemHtml = `
+        <li>
+          <h2>${data.itemName}</h2>
+          <p>${data.itemDescription}</p>
+          <p>Starting Price: ${data.itemPrice}</p>
+          <img src="${data.itemImage}" alt="${data.itemName}">
+          <p>Auction End Date: ${data.auctionEndDate}</p>
+          <button 
+            class="buyBtn"
+            data-item-pubkey="${data.itemPubkey}"
+            data-seller-pubkey="${data.sellerPubkey || ''}">
+            Buy Now
+          </button>
+        </li>
+      `;
+      auctionItemsList.innerHTML += itemHtml;
+
+      // ✅ Attach click handler to the new Buy button
+      const lastAddedButton = auctionItemsList.querySelector('li:last-child .buyBtn');
+      lastAddedButton.addEventListener('click', async () => {
+        const itemPubkey = lastAddedButton.dataset.itemPubkey;
+        const sellerPubkey = lastAddedButton.dataset.sellerPubkey;
+        if (!itemPubkey || !sellerPubkey) {
+          alert('Missing item or seller public key!');
+          return;
         }
-
-        if (!itemImage.type.startsWith("image/")) {
-            console.error("Invalid file type. Only images are allowed.");
-            return;
+        try {
+          console.log('Attempting to buy item:', itemPubkey, 'from seller:', sellerPubkey);
+          await buyItem(itemPubkey);
+          alert('✅ Purchase successful!');
+        } catch (err) {
+          console.error('Purchase failed:', err);
+          alert('Purchase failed. Check console for details.');
         }
-
-        const formData = new FormData();
-        formData.append('itemName', itemName);
-        formData.append('itemDescription', itemDescription);
-        formData.append('itemPrice', itemPrice);
-        formData.append('itemImage', itemImage);
-        formData.append('auctionEndDate', auctionEndDate);
-
-        fetch('/api/upload-item', {
-            method: 'POST',
-            body: formData
-        })
-        .then((response) => response.json())
-        .then((data) => {
-            const itemHtml = `
-                <li>
-                    <h2>${data.itemName}</h2>
-                    <p>${data.itemDescription}</p>
-                    <p>Starting Price: ${data.itemPrice}</p>
-                    <img src="${data.itemImage}" alt="${data.itemName}">
-                    <p>Auction End Date: ${data.auctionEndDate}</p>
-                </li>
-            `;
-            auctionItemsList.innerHTML += itemHtml;
-        })
-        .catch((error) => console.error(error));
-    });
+      });
+    })
+    .catch((error) => console.error(error));
+  });
 }
 
 /* ========= Registration Form ========= */
@@ -182,27 +207,23 @@ cartButtons.forEach((btn) => {
         console.log('Item added to cart:', productName);
     });
 });
+
 // ==============================
 // Add to Cart Functionality
 // ==============================
-
-// Select all "Add to Cart" buttons
 const addToCartBtns = document.querySelectorAll('.pro a');
 
 addToCartBtns.forEach((btn, index) => {
   btn.addEventListener('click', (e) => {
     e.preventDefault();
 
-    // Get product info from the card
     const card = btn.closest('.pro');
     const title = card.querySelector('h5').innerText;
     const price = parseFloat(card.querySelector('h4').innerText.replace('Sol', '').trim());
     const imgSrc = card.querySelector('img').src;
 
-    // Get existing cart from localStorage
     let cart = JSON.parse(localStorage.getItem('cart')) || [];
 
-    // Add product to cart
     cart.push({
       title: title,
       price: price,
@@ -210,7 +231,6 @@ addToCartBtns.forEach((btn, index) => {
       quantity: 1
     });
 
-    // Save cart back to localStorage
     localStorage.setItem('cart', JSON.stringify(cart));
 
     alert(`${title} added to cart!`);
@@ -240,13 +260,14 @@ modalImg.style.cssText = `
     box-shadow: 0 0 20px white;
 `;
 modal.appendChild(modalImg);
+
 /* ========= Buy Button Functionality ========= */
 const buyButtons = document.querySelectorAll('.buyBtn');
 
 buyButtons.forEach((btn) => {
   btn.addEventListener('click', async (e) => {
     const itemPubkey = btn.dataset.itemPubkey;
-    const sellerPubkey = btn.dataset.sellerPubkey;  // <-- Now included
+    const sellerPubkey = btn.dataset.sellerPubkey;
 
     if (!itemPubkey || !sellerPubkey) {
       alert('Missing item or seller public key!');
@@ -255,7 +276,7 @@ buyButtons.forEach((btn) => {
 
     try {
       console.log('Attempting to buy item:', itemPubkey, 'from seller:', sellerPubkey);
-      await buyItem(itemPubkey); 
+      await buyItem(itemPubkey,sellerPubkey);
       alert('✅ Purchase successful!');
     } catch (err) {
       console.error('Purchase failed:', err);
@@ -267,7 +288,6 @@ buyButtons.forEach((btn) => {
 // Close modal when clicking outside the image
 modal.addEventListener('click', () => modal.style.display = 'none');
 
-// Make product images clickable
 const allProductImages = document.querySelectorAll('.pro img');
 allProductImages.forEach(img => {
     img.style.cursor = 'pointer';
