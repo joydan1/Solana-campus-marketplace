@@ -542,17 +542,13 @@
     <p>Get Email updates about our latest shop and <span>special orders</span></p>
   </div>
   <div id="form" class="form">
-    <input type="text" placeholder="Input your Email Address">
-    <button class="normal">Sign UP</button>
-    <div id="error-message"></div>
+    <form id="register-form">
+      <input type="email" id="email" placeholder="Input your Email Address" required>
+      <button type="submit" class="normal">Sign UP</button>
+      <div id="error-message"></div>
+    </form>
   </div>
 </section>
-<div id="toast-container" style="
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    z-index: 10000;
-"></div>
 
 <script src="/script.js"></script>
 <script type="module" src="/wallet.js"></script>
