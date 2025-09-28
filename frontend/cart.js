@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let rows = cartTable.querySelectorAll("tr");
     let grandTotal = 0;
     rows.forEach((row) => {
-      const priceCell = row.cells[2]; // ✅ Corrected index
+      const priceCell = row.cells[2]; //  Corrected index
       const qtyInput = row.cells[3].querySelector("input");
       let price = parseFloat(priceCell.textContent);
       let quantity = parseInt(qtyInput.value);
@@ -63,7 +63,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const transaction = new window.solanaWeb3.Transaction().add(
         window.solanaWeb3.SystemProgram.transfer({
           fromPubkey: provider.publicKey,
-          toPubkey: new window.solanaWeb3.PublicKey("YOUR_RECIPIENT_ADDRESS_HERE"),
+          toPubkey: new window.solanaWeb3.PublicKey("5uH1zM1LMqJDfHBRSqvnEN31dC1Z359PoHzQbzcX374d"),
           lamports: grandTotal * window.solanaWeb3.LAMPORTS_PER_SOL,
         })
       );
