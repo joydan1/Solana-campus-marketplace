@@ -156,4 +156,32 @@ email,
     errorMessage.textContent = 'Error registering user';
   });
 });
+/* ==========================
+   Solana Wallet Integration
+   ========================== */
 
+const connectWalletBtn = document.getElementById("connectWalletBtn");
+
+async function connectWallet() {
+  if (window.solana && window.solana.isPhantom) {
+    try {
+      // Request connection
+      const response = await window.solana.connect();
+      const address = response.publicKey.toString();
+      
+      // Show connected address (optional)
+      connectWalletBtn.textContent = `Connected: ${address.slice(0, 4)}...${address.slice(-4)}`;
+      console.log("Connected with Public Key:", address);
+
+    } catch (err) {
+      console.error("Wallet connection failed:", err);
+    }
+  } else {
+    alert("Phantom wallet not found! Please install it from https://phantom.app/");
+    window.open("https://phantom.app/", "_blank");
+  }
+}
+
+if (connectWalletBtn) {
+  connectWalletBtn.addEventListener("click", connectWallet);
+}

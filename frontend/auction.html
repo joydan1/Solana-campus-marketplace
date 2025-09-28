@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auctions - Solana Students Africa Project</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+</head>
+<body>
+
+<!-- Header -->
+<section id="header">
+  <a href="index.html"><img src="logo.jpg" class="logo" alt="Logo"></a>
+  <div>
+    <ul id="navbar">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="product.html">Product</a></li>
+      <li><a class="active" href="auction.html">Auction</a></li>
+      <li id="Lg-bag"><a href="Cart.html"><i class="fa-solid fa-basket-shopping"></i></a></li>
+      <a href="#" id="close"><i class="fa-solid fa-xmark"></i></a>
+    </ul>
+  </div>
+  <div id="mobile">
+    <a href="Cart.html"><i class="fa-solid fa-basket-shopping"></i></a>
+    <i id="bar" class="fa-solid fa-bars"></i>
+  </div>
+</section>
+
+<!-- Auction Upload Form -->
+<section class="section-p1">
+  <h2>Upload Item for Auction</h2>
+  <form id="upload-item-form">
+    <input type="text" id="item-name" placeholder="Item Name" required>
+    <textarea id="item-description" placeholder="Description" required></textarea>
+    <input type="number" id="item-price" placeholder="Starting Price (SOL)" required step="0.001">
+    <input type="file" id="item-image" accept="image/*" required>
+    <input type="datetime-local" id="auction-end-date" required>
+    <button type="submit" class="normal">Upload Item</button>
+  </form>
+</section>
+
+<!-- Auction Items List -->
+<section class="section-p1">
+  <h2>Live Auctions</h2>
+  <ul id="auction-items"></ul>
+</section>
+
+<!-- Scripts -->
+<script type="module" src="script.js"></script>
+</body>
+</html>

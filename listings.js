@@ -27,14 +27,14 @@ async function logAction(message, data = null) {
 }
 
 // GET all listings
-router.get('/listings', async (req, res) => {
+router.get('/items', async (req, res) => {
   console.log("📌 All listings requested");
   await logAction("All listings requested");
   res.json(listings);
 });
 
 // GET a single listing
-router.get('/listings/:id', async (req, res) => {
+router.get('/items/:id', async (req, res) => {
   const { id } = req.params;
   const listing = listings.find(l => l.id === parseInt(id));
 
@@ -50,7 +50,7 @@ router.get('/listings/:id', async (req, res) => {
 });
 
 // POST new listing
-router.post('/listings', async (req, res) => {
+router.post('/items', async (req, res) => {
   const { title, price } = req.body;
   const newListing = {
     id: listings.length + 1,
@@ -66,7 +66,7 @@ router.post('/listings', async (req, res) => {
 });
 
 // PUT update listing
-router.put('/listings/:id', async (req, res) => {
+router.put('/items/:id', async (req, res) => {
   const { id } = req.params;
   const { title, price } = req.body;
   const listing = listings.find(l => l.id === parseInt(id));
@@ -86,7 +86,7 @@ router.put('/listings/:id', async (req, res) => {
 });
 
 // DELETE listing
-router.delete('/listings/:id', async (req, res) => {
+router.delete('/items/:id', async (req, res) => {
   const { id } = req.params;
   const index = listings.findIndex(l => l.id === parseInt(id));
 

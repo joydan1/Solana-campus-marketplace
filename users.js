@@ -74,3 +74,22 @@ router.delete('/:id', (req, res) => {
 
 // Export router
 module.exports = router;
+// Explicit register endpoint for frontend
+router.post('/register', (req, res) => {
+  const { username, email, password } = req.body;
+  if (!username || !email || !password) {
+    return res.status(400).json({ error: 'All fields are required' });
+  }
+
+  const newUser = {
+    id: users.length + 1,
+    name: username,
+    email,
+    password // ⚠️ Hackathon only, don’t store plain passwords in real apps
+  };
+
+  users.push(newUser);
+  console.log("✅ User registered:", newUser);
+
+  res.status(201).json(newUser);
+});

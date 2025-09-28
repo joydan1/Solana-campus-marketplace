@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_lang::system_program::{transfer, Transfer};
 
-declare_id!("Dh9qpAVZunvQrHuBiMRExS6b8ieCBMdnM3vnRa9SfLJZ"); // Change after deploy
+declare_id!("Dh9qpAVZunvQrHuBiMRExS6b8ieCBMdnM3vnRa9SfLJZ"); // replace after deploy
 
 #[program]
 pub mod marketplace {
@@ -46,11 +46,18 @@ pub mod marketplace {
         let system_program = &ctx.accounts.system_program;
 
         if item.escrow {
-            // Store buyer and wait for confirmation
+            // Transfer funds into PDA escrow vault
+            let ix = Transfer {
+                from: buyer.to_account_info(),
+                to: ctx.accounts.escrow_vault.to_account_info(),
+            };
+            transfer(CpiContext::new(system_program.to_account_info(), ix), item.price)?;
+
+            // Record buyer, mark as sold (pending confirmation)
             item.buyer = Some(buyer.key());
             item.sold = true;
         } else {
-            // Direct transfer
+            // Direct transfer to seller
             let ix = Transfer {
                 from: buyer.to_account_info(),
                 to: seller.to_account_info(),
@@ -75,8 +82,9 @@ pub mod marketplace {
         require!(item.buyer == Some(ctx.accounts.buyer.key()), MarketplaceError::NotAuthorized);
         require!(item.sold, MarketplaceError::NotSold);
 
+        // Release funds from escrow vault to seller
         let ix = Transfer {
-            from: ctx.accounts.buyer.to_account_info(),
+            from: ctx.accounts.escrow_vault.to_account_info(),
             to: ctx.accounts.seller.to_account_info(),
         };
         transfer(
@@ -97,6 +105,11 @@ pub mod marketplace {
         let item = &ctx.accounts.item;
         require!(item.seller == ctx.accounts.seller.key(), MarketplaceError::NotAuthorized);
         require!(!item.sold, MarketplaceError::AlreadySold);
+
+        emit!(ItemClosed {
+            seller: ctx.accounts.seller.key(),
+            name: item.name.clone(),
+        });
 
         Ok(())
     }
@@ -120,6 +133,13 @@ pub struct BuyItem<'info> {
     /// CHECK: Safe because we only transfer lamports
     #[account(mut)]
     pub seller: AccountInfo<'info>,
+    /// PDA escrow vault (holds buyer funds temporarily)
+    #[account(
+        mut,
+        seeds = [b"escrow", item.key().as_ref()],
+        bump
+    )]
+    pub escrow_vault: SystemAccount<'info>,
     pub system_program: Program<'info, System>,
 }
 
@@ -132,6 +152,12 @@ pub struct ConfirmPurchase<'info> {
     /// CHECK: Safe because we only transfer lamports
     #[account(mut)]
     pub seller: AccountInfo<'info>,
+    #[account(
+        mut,
+        seeds = [b"escrow", item.key().as_ref()],
+        bump
+    )]
+    pub escrow_vault: SystemAccount<'info>,
     pub system_program: Program<'info, System>,
 }
 
@@ -156,11 +182,11 @@ pub struct ItemAccount {
 
 impl ItemAccount {
     // Calculate storage size
-    pub const LEN: usize = 
+    pub const LEN: usize =
         32 + // seller
-        4 + 50 + // name (max 50 chars)
+        4 + 50 + // name
         8 + // price
-        4 + 20 + // category (max 20 chars)
+        4 + 20 + // category
         1 + // sold
         1 + // escrow
         1 + 32; // buyer (Option<Pubkey>)
@@ -189,11 +215,13 @@ pub struct ItemConfirmed {
     pub seller: Pubkey,
     pub price: u64,
 }
+
 #[event]
 pub struct ItemClosed {
     pub seller: Pubkey,
     pub name: String,
 }
+
 #[error_code]
 pub enum MarketplaceError {
     #[msg("Item name too long")]
@@ -209,4 +237,3 @@ pub enum MarketplaceError {
     #[msg("Item does not use escrow")]
     NotEscrow,
 }
-

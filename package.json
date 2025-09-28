@@ -5,7 +5,12 @@
   "license": "MIT",
   "devDependencies": {
     "@types/mocha": "^10.0.10",
-    "ts-mocha": "project-serum/anchor",
+    "ts-mocha": "^10.0.0",
     "typescript": "^5.9.2"
+  },
+  "dependencies": {
+    "body-parser": "^2.2.0",
+    "cors": "^2.8.5",
+    "express": "^5.1.0"
   }
 }
