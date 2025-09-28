@@ -2,12 +2,17 @@
 import * as web3 from 'https://cdn.jsdelivr.net/npm/@solana/web3.js/+esm';
 import { Program, AnchorProvider } from 'https://cdn.jsdelivr.net/npm/@project-serum/anchor/+esm';
 import idl from './idl.json' assert { type: 'json' };
-import { PROGRAM_ID } from './config.js'; 
+import { PROGRAM_ID } from './config.js';
 
 // ----------------------
 // Solana Connection
 // ----------------------
 export const connection = new web3.Connection(web3.clusterApiUrl('devnet'), 'confirmed');
+
+// ----------------------
+// Global wallet public key
+// ----------------------
+export let connectedPubKey = null;
 
 // ----------------------
 // Phantom Wallet Connection
@@ -17,25 +22,27 @@ export async function connectWallet() {
     throw new Error('Phantom wallet not found. Install Phantom and reload.');
   }
   try {
-    console.log('Phantom detected, connecting...');
     const resp = await window.solana.connect({ onlyIfTrusted: false });
-    return resp.publicKey.toString();
+    connectedPubKey = resp.publicKey.toString();
+    console.log('Connected with Public Key:', connectedPubKey);
+    return connectedPubKey;
   } catch (err) {
     console.error('Wallet connection failed:', err);
     throw err;
   }
 }
 
+// Get current public key if already connected
 export function getPublicKey() {
-  return window.solana?.publicKey?.toString() ?? null;
+  return connectedPubKey || window.solana?.publicKey?.toString() || null;
 }
 
 // ----------------------
 // Anchor Provider + Program
 // ----------------------
 export function getProvider() {
-  const provider = new AnchorProvider(connection, window.solana, { preflightCommitment: "processed" });
-  return provider;
+  if (!window.solana || !window.solana.isPhantom) throw new Error('Phantom not detected.');
+  return new AnchorProvider(connection, window.solana, { preflightCommitment: 'processed' });
 }
 
 export function getProgram() {
@@ -44,27 +51,30 @@ export function getProgram() {
 }
 
 // ----------------------
-// Send SOL
+// Send SOL Function
 // ----------------------
 export async function sendSol(toPubkeyStr, amountSol) {
-  if (!window.solana || !window.solana.isPhantom) throw new Error('Phantom not detected.');
-  const provider = window.solana;
-  const fromPubkey = provider.publicKey;
+  if (!window.solana || !window.solana.isPhantom) throw new Error('Phantom wallet not detected.');
+  const fromPubkey = window.solana.publicKey;
   if (!fromPubkey) throw new Error('Wallet not connected.');
 
   const toPubkey = new web3.PublicKey(toPubkeyStr);
   const lamports = Math.round(Number(amountSol) * web3.LAMPORTS_PER_SOL);
 
-  const tx = new web3.Transaction().add(web3.SystemProgram.transfer({ fromPubkey, toPubkey, lamports }));
+  const tx = new web3.Transaction().add(
+    web3.SystemProgram.transfer({ fromPubkey, toPubkey, lamports })
+  );
+
   const latest = await connection.getLatestBlockhash('finalized');
   tx.recentBlockhash = latest.blockhash;
   tx.feePayer = fromPubkey;
 
   try {
-    const signed = await provider.signAndSendTransaction?.(tx) 
-      ?? await provider.signTransaction(tx).then(stx => connection.sendRawTransaction(stx.serialize()));
-    await connection.confirmTransaction(signed.signature || signed, 'confirmed');
-    return signed.signature || signed;
+    const signedTx = await window.solana.signTransaction(tx);
+    const signature = await connection.sendRawTransaction(signedTx.serialize());
+    await connection.confirmTransaction(signature, 'confirmed');
+    console.log('Transaction successful:', signature);
+    return signature;
   } catch (err) {
     console.error('Transaction failed:', err);
     throw err;
@@ -72,13 +82,14 @@ export async function sendSol(toPubkeyStr, amountSol) {
 }
 
 // ----------------------
-// List Item (Anchor)
+// List Item Function
 // ----------------------
 export async function listItem(name, price, category, useEscrow = false) {
   const provider = getProvider();
   const program = getProgram();
 
   const itemAccount = web3.Keypair.generate();
+
   await program.methods
     .listItem(name, price, category, useEscrow)
     .accounts({
@@ -94,21 +105,24 @@ export async function listItem(name, price, category, useEscrow = false) {
 }
 
 // ----------------------
-// Buy Item (Anchor)
+// Buy Item Function
 // ----------------------
-export async function buyItem(itemPublicKey, sellerPubkey=null) {
+export async function buyItem(itemPublicKey, sellerPubkey = null) {
   const provider = getProvider();
   const program = getProgram();
-let seller=sellerPubkey;
-if(!seller) {
-  const itemAccount = await program.account.itemAccount.fetch(new web3.PublicKey(itemPublicKey));
+  let seller = sellerPubkey;
+
+  if (!seller) {
+    const itemAccount = await program.account.itemAccount.fetch(new web3.PublicKey(itemPublicKey));
+    seller = itemAccount.seller.toString();
+  }
 
   await program.methods
     .buyItem()
     .accounts({
       item: new web3.PublicKey(itemPublicKey),
       buyer: provider.wallet.publicKey,
-      seller: new web3.PublicKey(itemAccount.seller),
+      seller: new web3.PublicKey(seller),
       systemProgram: web3.SystemProgram.programId,
     })
     .rpc();
@@ -116,9 +130,9 @@ if(!seller) {
   console.log(`✅ Bought item: ${itemPublicKey}`);
   return itemPublicKey;
 }
-}
+
 // ----------------------
-// Confirm Purchase (for escrowed items)
+// Confirm Purchase (escrow)
 // ----------------------
 export async function confirmPurchase(itemPublicKey) {
   const provider = getProvider();
@@ -141,18 +155,16 @@ export async function confirmPurchase(itemPublicKey) {
 }
 
 // ----------------------
-// Connect button listener
+// Optional: connect wallet on page load if already trusted
 // ----------------------
-document.addEventListener('DOMContentLoaded', () => {
-  const connectBtn = document.getElementById('connectWalletBtn');
-  if (connectBtn) {
-    connectBtn.addEventListener('click', async () => {
-      try {
-        const pubKey = await connectWallet();
-        alert(`Connected: ${pubKey}`);
-      } catch (err) {
-        alert('Wallet connection failed. Check console.');
-      }
-    });
+document.addEventListener('DOMContentLoaded', async () => {
+  if (window.solana && window.solana.isPhantom) {
+    try {
+      const resp = await window.solana.connect({ onlyIfTrusted: true });
+      connectedPubKey = resp.publicKey.toString();
+      console.log('Auto-connected with public key:', connectedPubKey);
+    } catch {
+      // not auto-connected yet
+    }
   }
 });
