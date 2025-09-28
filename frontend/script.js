@@ -1,5 +1,7 @@
+
 /* ========= Navbar Mobile Toggle ========= */
-import { buyItem } from './wallet.js';
+import { supabase } from '/supabaseclient.js';
+import { buyItem } from '/wallet.js';
 const bar = document.getElementById('bar');
 const nav = document.getElementById('navbar');
 const close = document.getElementById('close');
