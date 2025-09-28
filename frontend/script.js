@@ -255,7 +255,7 @@ buyButtons.forEach((btn) => {
 
     try {
       console.log('Attempting to buy item:', itemPubkey, 'from seller:', sellerPubkey);
-      await buyItem(itemPubkey, sellerPubkey); // <-- Now passes both
+      await buyItem(itemPubkey); 
       alert('✅ Purchase successful!');
     } catch (err) {
       console.error('Purchase failed:', err);
