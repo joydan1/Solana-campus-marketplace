@@ -95,7 +95,7 @@ function renderListing(item) {
     if (!productRoot) return;
     productRoot.innerHTML = `
         <div class="product-card">
-            <img src="${item.image_url ?? 'img orig/placeholder.png'}" alt="${escapeHtml(item.title)}" style="max-width:300px;" />
+            <img src="${item.image_url ?? 'img_orig/placeholder.png'}" alt="${escapeHtml(item.title)}" style="max-width:300px;" />
             <h2>${escapeHtml(item.title)}</h2>
             <p>${escapeHtml(item.description ?? '')}</p>
             <p><strong>Price:</strong> ${Number(item.price).toFixed(3)} SOL</p>
@@ -110,7 +110,7 @@ async function renderProducts() {
 
     productRoot.innerHTML = products.map(p => `
         <div class="product-card" data-id="${p.id}">
-            <img src="${p.image_url ?? 'img orig/placeholder.png'}" alt="${escapeHtml(p.title)}" style="max-width:300px;" />
+            <img src="${p.image_url ?? 'img_orig/placeholder.png'}" alt="${escapeHtml(p.title)}" style="max-width:300px;" />
             <h2>${escapeHtml(p.title)}</h2>
             <p>${escapeHtml(p.description ?? '')}</p>
             <p><strong>${Number(p.price).toFixed(3)} SOL</strong></p>
@@ -150,42 +150,23 @@ function bindButtons() {
     if (buyBtn) {
         buyBtn.addEventListener('click', async () => {
             try {
-                const buyer = getPublicKey();
-                if (!buyer) { alert('Connect your Phantom wallet first'); return; }
                 if (!currentListing) { alert('Listing not loaded'); return; }
 
-                buyBtn.disabled = true;
-                txStatus.innerText = 'Sending transaction to Solana devnet...';
+                // 1️⃣ Add to LocalStorage Cart
+                let cart = JSON.parse(localStorage.getItem('cart')) || [];
+                cart.push({
+                    id: currentListing.id,
+                    title: currentListing.title,
+                    price: Number(currentListing.price),
+                    quantity: 1,
+                    imgSrc: currentListing.image_url ?? 'img_orig/placeholder.png'
+                });
+                localStorage.setItem('cart', JSON.stringify(cart));
 
-                const sig = await sendSol(currentListing.seller_wallet, Number(currentListing.price));
-                txStatus.innerHTML = `
-                    Transaction successful!<br/>
-                    Signature: <code>${sig}</code><br/>
-                    <a target="_blank" href="https://explorer.solana.com/tx/${sig}?cluster=devnet">View on Solana Explorer</a>
-                `;
+                alert("Item added to cart!");
+                window.location.href = "cart.html"; // redirect user
 
-                const { error } = await supabase.from('orders').insert([{
-                    listing_id: currentListing.id,
-                    buyer_wallet: buyer,
-                    seller_wallet: currentListing.seller_wallet,
-                    price: currentListing.price,
-                    tx_sig: sig,
-                    status: 'pending'
-                }]);
-
-                if (error) console.error('Supabase order insert error', error);
-
-            } catch (err) {
-                console.error(err);
-                alert('Purchase failed: ' + (err.message || err));
-                txStatus.innerText = 'Purchase failed.';
-            } finally {
-                buyBtn.disabled = false;
-            }
-        });
-    }
-}
-
+                
 // ----------------------
 // Initialize
 // ----------------------
@@ -195,12 +176,10 @@ export async function initProductPage() {
     bindButtons();
 }
 
-// Ensure DOM is ready
 window.addEventListener('DOMContentLoaded', async () => {
     await initProductPage();
 
     if (!window.solana || !window.solana.isPhantom) {
         console.warn('Phantom wallet not detected');
-        alert('Phantom wallet not found. Please install Phantom and reload.');
     }
 });
