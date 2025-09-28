@@ -21,6 +21,18 @@ if (close) {
         mobile.classList.remove('active');
     });
 }
+/* ========= Navbar Link Auto-Close on Mobile ========= */
+const navLinks = document.querySelectorAll('#navbar a');
+
+navLinks.forEach(link => {
+  link.addEventListener('click', () => {
+    const nav = document.getElementById('navbar');
+    const mobile = document.getElementById('mobile');
+
+    if (nav.classList.contains('active')) nav.classList.remove('active');
+    if (mobile.classList.contains('active')) mobile.classList.remove('active');
+  });
+});
 
 /* ========= Product Image Switch ========= */
 const products = document.querySelectorAll('.pro');
@@ -119,7 +131,7 @@ if (uploadItemForm) {
 
 /* ========= Registration Form ========= */
 const registerForm = document.getElementById('register-form');
-const errorMessage = document.getElementById('error-message');
+const errorMessage = document.getElementById('error-message'); // existing span for messages
 
 if (registerForm) {
   registerForm.addEventListener('submit', async (e) => {
@@ -130,6 +142,7 @@ if (registerForm) {
     const password = document.getElementById('password').value;
     const confirmPassword = document.getElementById('confirm-password').value;
 
+    // Validation
     if (!username || !email || !password || !confirmPassword) {
       errorMessage.textContent = 'Please fill out all fields';
       return;
@@ -146,16 +159,26 @@ if (registerForm) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, email, password })
       });
+
       const data = await response.json();
+
+      if (response.ok) {
+        errorMessage.style.color = 'green';
+        errorMessage.textContent = '✅ Registration successful!';
+        registerForm.reset(); // Clear the form
+      } else {
+        errorMessage.style.color = 'red';
+        errorMessage.textContent = data.message || 'Error registering user';
+      }
+
       console.log(data);
-      alert('Registration successful!');
     } catch (err) {
       console.error(err);
-      errorMessage.textContent = 'Error registering user';
+      errorMessage.style.color = 'red';
+      errorMessage.textContent = 'Error registering user. Check console.';
     }
   });
 }
-
 
 /* ========= Solana Wallet Integration ========= */
 import { connectWallet } from './wallet.js';
@@ -201,6 +224,32 @@ window.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+/* ========= Disable Buy Buttons Until Wallet Connected ========= */
+const buyButtons = document.querySelectorAll('.buyBtn');
+
+// Initially disable all Buy buttons
+buyButtons.forEach(btn => btn.disabled = true);
+
+// Function to enable Buy buttons
+function enableBuyButtons() {
+  buyButtons.forEach(btn => btn.disabled = false);
+}
+
+// Listen for wallet connection
+if (window.solana && window.solana.isPhantom) {
+  if (window.solana.isConnected) {
+    enableBuyButtons();
+  }
+
+  window.solana.on('connect', () => {
+    enableBuyButtons();
+  });
+
+  window.solana.on('disconnect', () => {
+    buyButtons.forEach(btn => btn.disabled = true);
+  });
+}
+
 /* ========= Cart Functionality ========= */
 let cartCount = 0;
 const cartIcon = document.querySelector('#Lg-bag a');
@@ -296,3 +345,34 @@ document.querySelectorAll('.buyBtn').forEach((btn) => {
     }
   });
 });
+/* ========= Newsletter Subscription ========= */
+const newsletterForm = document.getElementById('newsletter-form');
+const newsletterMessage = document.getElementById('newsletter-message');
+
+if (newsletterForm) {
+  newsletterForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('newsletter-email').value.trim();
+    if (!email) {
+      newsletterMessage.textContent = "Please enter a valid email.";
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('newsletter')
+        .insert([{ email }]);
+
+      if (error) {
+        console.error(error);
+        newsletterMessage.textContent = "Subscription failed. Try again.";
+      } else {
+        newsletterMessage.textContent = "✅ Successfully subscribed!";
+        newsletterForm.reset();
+      }
+    } catch (err) {
+      console.error(err);
+      newsletterMessage.textContent = "Subscription failed. Check console.";
+    }
+  });
+}
