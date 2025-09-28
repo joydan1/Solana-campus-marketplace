@@ -1,6 +1,7 @@
 /* ========= Navbar Mobile Toggle ========= */
-import { supabase } from '/supabaseclient.js';
-import { buyItem } from '/wallet.js';
+import { supabase } from './supabaseclient.js';
+import { buyItem } from './wallet.js';
+
 const bar = document.getElementById('bar');
 const nav = document.getElementById('navbar');
 const close = document.getElementById('close');
@@ -20,13 +21,11 @@ if (close) {
     });
 }
 
-/* ========= Product Image Switch (Updated) ========= */
-// For all products: clicking the product image will toggle it with smaller images if present
+/* ========= Product Image Switch ========= */
 const products = document.querySelectorAll('.pro');
 products.forEach((product) => {
-    const mainImg = product.querySelector('img'); // main image
-    const smallImgs = product.querySelectorAll('.small-img'); // optional small images
-
+    const mainImg = product.querySelector('img');
+    const smallImgs = product.querySelectorAll('.small-img');
     smallImgs.forEach((smallImg) => {
         smallImg.addEventListener('click', () => {
             mainImg.src = smallImg.src;
@@ -45,27 +44,29 @@ paginationLinks.forEach((link, index) => {
     });
 });
 
-/* ========= Upload Auction Item ========= */
+/* ========= Auction Item Upload ========= */
 const uploadItemForm = document.getElementById('upload-item-form');
 const auctionItemsList = document.getElementById('auction-items');
 
 if (uploadItemForm) {
-  uploadItemForm.addEventListener('submit', (e) => {
+  uploadItemForm.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const itemName = document.getElementById('item-name').value;
-    const itemDescription = document.getElementById('item-description').value;
-    const itemPrice = document.getElementById('item-price').value;
+    const itemName = document.getElementById('item-name').value.trim();
+    const itemDescription = document.getElementById('item-description').value.trim();
+    const itemPrice = document.getElementById('item-price').value.trim();
     const itemImage = document.getElementById('item-image').files[0];
     const auctionEndDate = document.getElementById('auction-end-date').value;
 
     if (!itemName || !itemDescription || !itemPrice || !itemImage || !auctionEndDate) {
       console.error("Please fill out all fields");
+      alert("Please fill out all fields");
       return;
     }
 
     if (!itemImage.type.startsWith("image/")) {
       console.error("Invalid file type. Only images are allowed.");
+      alert("Invalid file type. Only images are allowed.");
       return;
     }
 
@@ -76,49 +77,49 @@ if (uploadItemForm) {
     formData.append('itemImage', itemImage);
     formData.append('auctionEndDate', auctionEndDate);
 
-    fetch('/api/upload-item', {
-      method: 'POST',
-      body: formData
-    })
-    .then((response) => response.json())
-    .then((data) => {
+    try {
+      const response = await fetch('/api/upload-item', { method: 'POST', body: formData });
+      const data = await response.json();
+
+      // Add item to auction list
       const itemHtml = `
         <li>
           <h2>${data.itemName}</h2>
           <p>${data.itemDescription}</p>
-          <p>Starting Price: ${data.itemPrice}</p>
+          <p>Starting Price: ${data.itemPrice} SOL</p>
           <img src="${data.itemImage}" alt="${data.itemName}">
           <p>Auction End Date: ${data.auctionEndDate}</p>
-          <button 
-            class="buyBtn"
-            data-item-pubkey="${data.itemPubkey}"
-            data-seller-pubkey="${data.sellerPubkey || ''}">
+          <button class="buyBtn" data-item-pubkey="${data.itemPubkey}" data-seller-pubkey="${data.sellerPubkey || ''}">
             Buy Now
           </button>
         </li>
       `;
       auctionItemsList.innerHTML += itemHtml;
 
-      // ✅ Attach click handler to the new Buy button
-      const lastAddedButton = auctionItemsList.querySelector('li:last-child .buyBtn');
-      lastAddedButton.addEventListener('click', async () => {
-        const itemPubkey = lastAddedButton.dataset.itemPubkey;
-        const sellerPubkey = lastAddedButton.dataset.sellerPubkey;
+      // Attach click handler to newly added Buy button
+      const lastBtn = auctionItemsList.querySelector('li:last-child .buyBtn');
+      lastBtn.addEventListener('click', async () => {
+        const itemPubkey = lastBtn.dataset.itemPubkey;
+        const sellerPubkey = lastBtn.dataset.sellerPubkey;
+
         if (!itemPubkey || !sellerPubkey) {
           alert('Missing item or seller public key!');
           return;
         }
+
         try {
           console.log('Attempting to buy item:', itemPubkey, 'from seller:', sellerPubkey);
-          await buyItem(itemPubkey);
+          await buyItem(itemPubkey, sellerPubkey);
           alert('✅ Purchase successful!');
         } catch (err) {
           console.error('Purchase failed:', err);
           alert('Purchase failed. Check console for details.');
         }
       });
-    })
-    .catch((error) => console.error(error));
+    } catch (err) {
+      console.error(err);
+      alert('Upload failed. Check console for details.');
+    }
   });
 }
 
@@ -127,14 +128,15 @@ const registerForm = document.getElementById('register-form');
 const errorMessage = document.getElementById('error-message');
 
 if (registerForm) {
-    registerForm.addEventListener('submit', (e) => {
+    registerForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const username = document.getElementById('username').value;
-        const email = document.getElementById('email').value;
+
+        const username = document.getElementById('username').value.trim();
+        const email = document.getElementById('email').value.trim();
         const password = document.getElementById('password').value;
         const confirmPassword = document.getElementById('confirm-password').value;
 
-        if (username === '' || email === '' || password === '' || confirmPassword === '') {
+        if (!username || !email || !password || !confirmPassword) {
             errorMessage.textContent = 'Please fill out all fields';
             return;
         }
@@ -144,39 +146,43 @@ if (registerForm) {
             return;
         }
 
-        fetch('/api/register', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, email, password })
-        })
-        .then((response) => response.json())
-        .then((data) => console.log(data))
-        .catch((error) => {
-            console.error(error);
+        try {
+            const response = await fetch('/api/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, email, password })
+            });
+            const data = await response.json();
+            console.log(data);
+            alert('Registration successful!');
+        } catch (err) {
+            console.error(err);
             errorMessage.textContent = 'Error registering user';
-        });
+        }
     });
 }
 
 /* ========= Solana Wallet Integration ========= */
 const connectWalletBtn = document.getElementById("connectWalletBtn");
+
 async function connectWallet() {
     if (window.solana && window.solana.isPhantom) {
         try {
-            const response = await window.solana.connect();
-            const address = response.publicKey.toString();
-            connectWalletBtn.textContent = `Connected: ${address.slice(0, 4)}...${address.slice(-4)}`;
+            const resp = await window.solana.connect();
+            const address = resp.publicKey.toString();
+            connectWalletBtn.textContent = `Connected: ${address.slice(0,4)}...${address.slice(-4)}`;
             console.log("Connected with Public Key:", address);
         } catch (err) {
             console.error("Wallet connection failed:", err);
+            alert("Wallet connection failed. Check console for details.");
         }
     } else {
         alert("Phantom wallet not found! Please install it from https://phantom.app/");
         window.open("https://phantom.app/", "_blank");
     }
 }
-if (connectWalletBtn) connectWalletBtn.addEventListener("click", connectWallet);
 
+if (connectWalletBtn) connectWalletBtn.addEventListener("click", connectWallet);
 
 /* ========= Cart Functionality ========= */
 let cartCount = 0;
@@ -197,8 +203,7 @@ cartBadge.style.cssText = `
 cartIcon.style.position = 'relative';
 cartIcon.appendChild(cartBadge);
 
-const cartButtons = document.querySelectorAll('.fa-basket-shopping');
-cartButtons.forEach((btn) => {
+document.querySelectorAll('.fa-basket-shopping').forEach((btn) => {
     btn.addEventListener('click', () => {
         cartCount++;
         cartBadge.textContent = cartCount;
@@ -208,36 +213,24 @@ cartButtons.forEach((btn) => {
     });
 });
 
-// ==============================
-// Add to Cart Functionality
-// ==============================
-const addToCartBtns = document.querySelectorAll('.pro a');
+/* ========= Add to Cart from Products ========= */
+document.querySelectorAll('.pro a').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const card = btn.closest('.pro');
+        const title = card.querySelector('h5').innerText;
+        const price = parseFloat(card.querySelector('h4').innerText.replace('Sol','').trim());
+        const imgSrc = card.querySelector('img').src;
 
-addToCartBtns.forEach((btn, index) => {
-  btn.addEventListener('click', (e) => {
-    e.preventDefault();
+        let cart = JSON.parse(localStorage.getItem('cart')) || [];
+        cart.push({ title, price, imgSrc, quantity:1 });
+        localStorage.setItem('cart', JSON.stringify(cart));
 
-    const card = btn.closest('.pro');
-    const title = card.querySelector('h5').innerText;
-    const price = parseFloat(card.querySelector('h4').innerText.replace('Sol', '').trim());
-    const imgSrc = card.querySelector('img').src;
-
-    let cart = JSON.parse(localStorage.getItem('cart')) || [];
-
-    cart.push({
-      title: title,
-      price: price,
-      imgSrc: imgSrc,
-      quantity: 1
+        alert(`${title} added to cart!`);
     });
-
-    localStorage.setItem('cart', JSON.stringify(cart));
-
-    alert(`${title} added to cart!`);
-  });
 });
 
-/* ========= Product Modal for Clicking Images ========= */
+/* ========= Product Modal ========= */
 const modal = document.createElement('div');
 modal.id = 'product-modal';
 modal.style.cssText = `
@@ -261,38 +254,34 @@ modalImg.style.cssText = `
 `;
 modal.appendChild(modalImg);
 
-/* ========= Buy Button Functionality ========= */
-const buyButtons = document.querySelectorAll('.buyBtn');
-
-buyButtons.forEach((btn) => {
-  btn.addEventListener('click', async (e) => {
-    const itemPubkey = btn.dataset.itemPubkey;
-    const sellerPubkey = btn.dataset.sellerPubkey;
-
-    if (!itemPubkey || !sellerPubkey) {
-      alert('Missing item or seller public key!');
-      return;
-    }
-
-    try {
-      console.log('Attempting to buy item:', itemPubkey, 'from seller:', sellerPubkey);
-      await buyItem(itemPubkey,sellerPubkey);
-      alert('✅ Purchase successful!');
-    } catch (err) {
-      console.error('Purchase failed:', err);
-      alert('Purchase failed. Check console for details.');
-    }
-  });
-});
-
-// Close modal when clicking outside the image
 modal.addEventListener('click', () => modal.style.display = 'none');
 
-const allProductImages = document.querySelectorAll('.pro img');
-allProductImages.forEach(img => {
+document.querySelectorAll('.pro img').forEach(img => {
     img.style.cursor = 'pointer';
     img.addEventListener('click', () => {
         modalImg.src = img.src;
         modal.style.display = 'flex';
+    });
+});
+
+/* ========= Buy Button ========= */
+document.querySelectorAll('.buyBtn').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+        const itemPubkey = btn.dataset.itemPubkey;
+        const sellerPubkey = btn.dataset.sellerPubkey;
+
+        if (!itemPubkey || !sellerPubkey) {
+            alert('Missing item or seller public key!');
+            return;
+        }
+
+        try {
+            console.log('Buying item:', itemPubkey, sellerPubkey);
+            await buyItem(itemPubkey, sellerPubkey);
+            alert('✅ Purchase successful!');
+        } catch (err) {
+            console.error(err);
+            alert('Purchase failed. Check console for details.');
+        }
     });
 });
