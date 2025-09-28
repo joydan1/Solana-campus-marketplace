@@ -96,10 +96,11 @@ export async function listItem(name, price, category, useEscrow = false) {
 // ----------------------
 // Buy Item (Anchor)
 // ----------------------
-export async function buyItem(itemPublicKey) {
+export async function buyItem(itemPublicKey, sellerPubkey=null) {
   const provider = getProvider();
   const program = getProgram();
-
+let seller=sellerPubkey;
+if(!seller) {
   const itemAccount = await program.account.itemAccount.fetch(new web3.PublicKey(itemPublicKey));
 
   await program.methods
