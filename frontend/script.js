@@ -61,6 +61,7 @@ paginationLinks.forEach((link, index) => {
 /* ========= Auction Item Upload ========= */
 const uploadItemForm = document.getElementById('upload-item-form');
 const auctionItemsList = document.getElementById('auction-items');
+const uploadMessage = document.getElementById('upload-message'); // optional span for inline feedback
 
 if (uploadItemForm) {
   uploadItemForm.addEventListener('submit', async (e) => {
@@ -73,58 +74,81 @@ if (uploadItemForm) {
     const auctionEndDate = document.getElementById('auction-end-date').value;
 
     if (!itemName || !itemDescription || !itemPrice || !itemImage || !auctionEndDate) {
-      alert("Please fill out all fields");
+      if (uploadMessage) uploadMessage.textContent = 'Please fill out all fields';
       return;
     }
 
     if (!itemImage.type.startsWith("image/")) {
-      alert("Invalid file type. Only images are allowed.");
+      if (uploadMessage) uploadMessage.textContent = 'Invalid file type. Only images are allowed.';
       return;
     }
 
-    const formData = new FormData();
-    formData.append('itemName', itemName);
-    formData.append('itemDescription', itemDescription);
-    formData.append('itemPrice', itemPrice);
-    formData.append('itemImage', itemImage);
-    formData.append('auctionEndDate', auctionEndDate);
-
     try {
+      const formData = new FormData();
+      formData.append('itemName', itemName);
+      formData.append('itemDescription', itemDescription);
+      formData.append('itemPrice', itemPrice);
+      formData.append('itemImage', itemImage);
+      formData.append('auctionEndDate', auctionEndDate);
+
       const response = await fetch('/api/upload-item', { method: 'POST', body: formData });
       const data = await response.json();
 
-      const itemHtml = `
-        <li>
-          <h2>${data.itemName}</h2>
-          <p>${data.itemDescription}</p>
-          <p>Starting Price: ${data.itemPrice} SOL</p>
-          <img src="${data.itemImage}" alt="${data.itemName}">
-          <p>Auction End Date: ${data.auctionEndDate}</p>
-          <button class="buyBtn" data-item-pubkey="${data.itemPubkey}" data-seller-pubkey="${data.sellerPubkey || ''}">
-            Buy Now
-          </button>
-        </li>
-      `;
-      auctionItemsList.innerHTML += itemHtml;
-
-      // Attach Buy button to new item
-      const lastBtn = auctionItemsList.querySelector('li:last-child .buyBtn');
-      lastBtn.addEventListener('click', async () => {
-        const itemPubkey = lastBtn.dataset.itemPubkey;
-        const sellerPubkey = lastBtn.dataset.sellerPubkey || null;
-
-        if (!itemPubkey) return alert('Missing item public key!');
-        try {
-          await buyItem(itemPubkey, sellerPubkey);
-          alert('✅ Purchase successful!');
-        } catch (err) {
-          console.error(err);
-          alert('Purchase failed. Check console for details.');
+      if (response.ok) {
+        // Inline success message
+        if (uploadMessage) {
+          uploadMessage.style.color = 'green';
+          uploadMessage.textContent = '✅ Item uploaded successfully!';
         }
-      });
+
+        uploadItemForm.reset();
+
+        const itemHtml = `
+          <li>
+            <h2>${data.itemName}</h2>
+            <p>${data.itemDescription}</p>
+            <p>Starting Price: ${data.itemPrice} SOL</p>
+            <img src="${data.itemImage}" alt="${data.itemName}">
+            <p>Auction End Date: ${data.auctionEndDate}</p>
+            <button class="buyBtn" data-item-pubkey="${data.itemPubkey}" data-seller-pubkey="${data.sellerPubkey || ''}" disabled>
+              Buy Now
+            </button>
+          </li>
+        `;
+        auctionItemsList.innerHTML += itemHtml;
+
+        // Attach Buy button to new item
+        const lastBtn = auctionItemsList.querySelector('li:last-child .buyBtn');
+        lastBtn.addEventListener('click', async () => {
+          const itemPubkey = lastBtn.dataset.itemPubkey;
+          const sellerPubkey = lastBtn.dataset.sellerPubkey || null;
+
+          if (!itemPubkey) return showToast('❌ Missing item public key!');
+          try {
+            await buyItem(itemPubkey, sellerPubkey);
+            showToast('✅ Purchase successful!');
+          } catch (err) {
+            console.error(err);
+            showToast('❌ Purchase failed. Check console.');
+          }
+        });
+
+        // Enable Buy button if wallet connected
+        if (window.solana && window.solana.isConnected) lastBtn.disabled = false;
+
+      } else {
+        if (uploadMessage) {
+          uploadMessage.style.color = 'red';
+          uploadMessage.textContent = data.message || 'Upload failed';
+        }
+      }
+
     } catch (err) {
       console.error(err);
-      alert('Upload failed. Check console for details.');
+      if (uploadMessage) {
+        uploadMessage.style.color = 'red';
+        uploadMessage.textContent = 'Upload failed. Check console.';
+      }
     }
   });
 }
@@ -291,7 +315,7 @@ document.querySelectorAll('.pro a').forEach((btn) => {
     cart.push({ title, price, imgSrc, quantity:1 });
     localStorage.setItem('cart', JSON.stringify(cart));
 
-    alert(`${title} added to cart!`);
+  showToast(`✅ Added "${productName}" to cart!`);
   });
 });
 
@@ -338,10 +362,10 @@ document.querySelectorAll('.buyBtn').forEach((btn) => {
     if (!itemPubkey) return alert('Missing item public key!');
     try {
       await buyItem(itemPubkey, sellerPubkey);
-      alert('✅ Purchase successful!');
+      showtoast('✅ Purchase successful!');
     } catch (err) {
       console.error(err);
-      alert('Purchase failed. Check console for details.');
+      showtoast('Purchase failed. Check console for details.');
     }
   });
 });
@@ -375,4 +399,30 @@ if (newsletterForm) {
       newsletterMessage.textContent = "Subscription failed. Check console.";
     }
   });
+}
+/* ========= Toast Notification ========= */
+function showToast(message, duration = 3000) {
+  const container = document.getElementById('toast-container');
+  if (!container) return;
+
+  const toast = document.createElement('div');
+  toast.textContent = message;
+  toast.style.cssText = `
+    background: rgba(0,0,0,0.8);
+    color: #fff;
+    padding: 10px 15px;
+    margin-top: 10px;
+    border-radius: 5px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    animation: slideIn 0.3s ease forwards;
+    font-family: sans-serif;
+  `;
+
+  container.appendChild(toast);
+
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transition = 'opacity 0.5s';
+    setTimeout(() => container.removeChild(toast), 500);
+  }, duration);
 }
