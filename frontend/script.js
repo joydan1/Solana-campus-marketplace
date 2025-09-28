@@ -156,19 +156,51 @@ if (registerForm) {
   });
 }
 
+
 /* ========= Solana Wallet Integration ========= */
-const connectWalletBtn = document.getElementById("connectWalletBtn");
-if (connectWalletBtn) {
+import { connectWallet } from './wallet.js';
+
+window.addEventListener('DOMContentLoaded', () => {
+  const connectWalletBtn = document.getElementById("connectWalletBtn");
+
+  if (!connectWalletBtn) return;
+
+  // Update button text if already connected
+  if (window.solana && window.solana.isPhantom && window.solana.isConnected) {
+    const pubKey = window.solana.publicKey.toString();
+    connectWalletBtn.textContent = `Connected: ${pubKey.slice(0,4)}...${pubKey.slice(-4)}`;
+  }
+
+  // Click listener
   connectWalletBtn.addEventListener('click', async () => {
+    // Phantom check
+    if (!window.solana || !window.solana.isPhantom) {
+      alert("Phantom wallet not found! Please install it.");
+      window.open("https://phantom.app/", "_blank");
+      return;
+    }
+
     try {
+      // Connect wallet
       const pubKey = await connectWallet();
       connectWalletBtn.textContent = `Connected: ${pubKey.slice(0,4)}...${pubKey.slice(-4)}`;
+      console.log("Wallet connected:", pubKey);
     } catch (err) {
-      alert('Wallet connection failed. Check console.');
+      console.error("Wallet connection failed:", err);
+      alert("Wallet connection failed. Check console.");
     }
   });
-}
 
+  // Optional: auto-update button if wallet connection changes
+  if (window.solana) {
+    window.solana.on("connect", (publicKey) => {
+      connectWalletBtn.textContent = `Connected: ${publicKey.toString().slice(0,4)}...${publicKey.toString().slice(-4)}`;
+    });
+    window.solana.on("disconnect", () => {
+      connectWalletBtn.textContent = "Connect Wallet";
+    });
+  }
+});
 /* ========= Cart Functionality ========= */
 let cartCount = 0;
 const cartIcon = document.querySelector('#Lg-bag a');
