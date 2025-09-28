@@ -130,14 +130,14 @@ async function renderProducts() {
 // ----------------------
 function bindButtons() {
     if (connectBtn) {
-        connectBtn.addEventListener('click', async () => {
+        connectWalletBtn.addEventListener('click', async () => {
             try {
                 const pub = await connectWallet();
-                connectBtn.innerText = 'Connected: ' + shortWallet(pub);
+                connectWalletBtn.innerText = 'Connected: ' + shortWallet(pub);
 
                 window.solana.on('accountChanged', (publicKey) => {
-                    if (publicKey) connectBtn.innerText = 'Connected: ' + shortWallet(publicKey.toString());
-                    else connectBtn.innerText = 'Connect Wallet';
+                    if (publicKey) connectWalletBtn.innerText = 'Connected: ' + shortWallet(publicKey.toString());
+                    else connectWalletBtn.innerText = 'Connect Wallet';
                 });
 
             } catch (e) {
