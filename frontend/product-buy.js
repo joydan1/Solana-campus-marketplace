@@ -11,7 +11,7 @@ const connection = new Connection("https://api.devnet.solana.com", 'confirmed');
 // DOM Elements
 // ----------------------
 const productRoot = document.getElementById('productRoot');
-const connectBtn = document.getElementById('connectBtn');
+const connectBtn = document.getElementById('connectWalletBtn');
 const buyBtn = document.getElementById('buyBtn');
 const txStatus = document.getElementById('txStatus');
 
@@ -148,23 +148,39 @@ function bindButtons() {
     }
 
     if (buyBtn) {
-        buyBtn.addEventListener('click', async () => {
-            try {
-                if (!currentListing) { alert('Listing not loaded'); return; }
+    buyBtn.addEventListener('click', async () => {
+        try {
+            if (!currentListing) { 
+                alert('Listing not loaded'); 
+                return; 
+            }
 
-                // 1️⃣ Add to LocalStorage Cart
-                let cart = JSON.parse(localStorage.getItem('cart')) || [];
-                cart.push({
-                    id: currentListing.id,
-                    title: currentListing.title,
-                    price: Number(currentListing.price),
-                    quantity: 1,
-                    imgSrc: currentListing.image_url ?? 'img_orig/placeholder.png'
-                });
-                localStorage.setItem('cart', JSON.stringify(cart));
+            // 💳 1. Send SOL to seller
+            const signature = await sendSol(currentListing.seller_wallet, currentListing.price);
+            txStatus.innerText = "✅ Payment sent! Signature: " + signature;
 
-                alert("Item added to cart!");
-                window.location.href = "cart.html"; // redirect user
+            // 🛒 2. Add item to localStorage cart
+            let cart = JSON.parse(localStorage.getItem('cart')) || [];
+            cart.push({
+                id: currentListing.id,
+                title: currentListing.title,
+                price: Number(currentListing.price),
+                quantity: 1,
+                imgSrc: currentListing.image_url ?? 'img_orig/placeholder.png'
+            });
+            localStorage.setItem('cart', JSON.stringify(cart));
+
+            alert("Item purchased and added to cart!");
+            window.location.href = "cart.html"; 
+
+        } catch (e) {
+            console.error(e);
+            txStatus.innerText = " Payment failed: " + (e.message || e);
+        }
+    });
+}
+
+               
 
                 
 // ----------------------
@@ -183,3 +199,20 @@ window.addEventListener('DOMContentLoaded', async () => {
         console.warn('Phantom wallet not detected');
     }
 });
+// Newsletter signup feedback
+const signupBtn = document.querySelector('#form button');
+const signupInput = document.querySelector('#form input');
+const errorDiv = document.getElementById('error-message');
+
+if (signupBtn && signupInput && errorDiv) {
+    signupBtn.addEventListener('click', () => {
+        if (!signupInput.value.includes('@')) {
+            errorDiv.innerText = " Please enter a valid email";
+            errorDiv.style.color = "red";
+        } else {
+            errorDiv.innerText = "✅ Thanks for signing up!";
+            errorDiv.style.color = "green";
+            signupInput.value = "";
+        }
+    });
+}
