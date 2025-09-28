@@ -3,31 +3,32 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>cart - Solana Marketplace</title>
+  <title>Cart - Solana Marketplace</title>
+  
   <link rel="stylesheet" href="/style.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
 </head>
 <body>
   <!-- Header Section -->
   <section id="header">
-    <a href="#"><img src="img/logo.jpg" class="logo" alt=""></a>
+    <a href="./index.html"><img src="./img/logo.jpg" class="logo" alt="Solana Marketplace Logo"></a>
     <div>
       <ul id="navbar">
-        <li><a href="index.html">Home</a></li>
-        <li><a href="product.html">Product</a></li>
-        <li><a href="auction.html">Auction</a></li>
-        <li id="Lg-bag"><a class="active" href="cart.html"><i class="fa-solid fa-basket-shopping"></i></a></li>
+        <li><a href="./index.html">Home</a></li>
+        <li><a href="./product.html">Product</a></li>
+        <li><a href="./auction.html">Auction</a></li>
+        <li id="lg-bag"><a class="active" href="./cart.html"><i class="fa-solid fa-basket-shopping"></i></a></li>
         <li><button id="connectWalletBtn" class="normal">Connect Wallet</button></li>
         <a href="#" id="close"><i class="fa-solid fa-xmark"></i></a>
       </ul>
     </div>
     <div id="mobile">
-      <a href="cart.html"><i class="fa-solid fa-basket-shopping"></i></a>
+      <a href="./cart.html"><i class="fa-solid fa-basket-shopping"></i></a>
       <i id="bar" class="fa-solid fa-bars"></i>
     </div>
   </section>
 
-  <!-- cart Section -->
+  <!-- Cart Section -->
   <section id="cart" class="section-p1">
     <h1>Your Cart</h1>
     <table id="cart-table">
@@ -45,13 +46,14 @@
       </tbody>
     </table>
     <div class="cart-summary">
-      <h3>Total: <span id="total-price">0.000</span> SOL</h3>
+      <h3>Total: <span id="grandTotal">0.000</span> SOL</h3>
       <button id="checkout-btn" class="normal">Checkout</button>
     </div>
   </section>
 
-  <script src="./js/script.js"></script>
-  <script type="module" src="./js/wallet.js"></script>
-    
+ 
+  <script src="/script.js"></script>
+  <script src="/cart.js"></script>
+  <script type="module" src="/wallet.js"></script>
 </body>
 </html>
