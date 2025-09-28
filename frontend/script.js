@@ -1,4 +1,5 @@
 /* ========= Navbar Mobile Toggle ========= */
+import { buyItem } from './wallet.js';
 const bar = document.getElementById('bar');
 const nav = document.getElementById('navbar');
 const close = document.getElementById('close');
@@ -149,6 +150,7 @@ async function connectWallet() {
 }
 if (connectWalletBtn) connectWalletBtn.addEventListener("click", connectWallet);
 
+
 /* ========= Cart Functionality ========= */
 let cartCount = 0;
 const cartIcon = document.querySelector('#Lg-bag a');
@@ -236,6 +238,29 @@ modalImg.style.cssText = `
     box-shadow: 0 0 20px white;
 `;
 modal.appendChild(modalImg);
+/* ========= Buy Button Functionality ========= */
+const buyButtons = document.querySelectorAll('.buyBtn');
+
+buyButtons.forEach((btn) => {
+  btn.addEventListener('click', async (e) => {
+    const itemPubkey = btn.dataset.itemPubkey;
+    const sellerPubkey = btn.dataset.sellerPubkey;  // <-- Now included
+
+    if (!itemPubkey || !sellerPubkey) {
+      alert('Missing item or seller public key!');
+      return;
+    }
+
+    try {
+      console.log('Attempting to buy item:', itemPubkey, 'from seller:', sellerPubkey);
+      await buyItem(itemPubkey, sellerPubkey); // <-- Now passes both
+      alert('✅ Purchase successful!');
+    } catch (err) {
+      console.error('Purchase failed:', err);
+      alert('Purchase failed. Check console for details.');
+    }
+  });
+});
 
 // Close modal when clicking outside the image
 modal.addEventListener('click', () => modal.style.display = 'none');
