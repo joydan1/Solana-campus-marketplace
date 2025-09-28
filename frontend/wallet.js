@@ -116,7 +116,7 @@ if(!seller) {
   console.log(`✅ Bought item: ${itemPublicKey}`);
   return itemPublicKey;
 }
-
+}
 // ----------------------
 // Confirm Purchase (for escrowed items)
 // ----------------------
