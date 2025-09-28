@@ -178,6 +178,41 @@ cartButtons.forEach((btn) => {
         console.log('Item added to cart:', productName);
     });
 });
+// ==============================
+// Add to Cart Functionality
+// ==============================
+
+// Select all "Add to Cart" buttons
+const addToCartBtns = document.querySelectorAll('.pro a');
+
+addToCartBtns.forEach((btn, index) => {
+  btn.addEventListener('click', (e) => {
+    e.preventDefault();
+
+    // Get product info from the card
+    const card = btn.closest('.pro');
+    const title = card.querySelector('h5').innerText;
+    const price = parseFloat(card.querySelector('h4').innerText.replace('Sol', '').trim());
+    const imgSrc = card.querySelector('img').src;
+
+    // Get existing cart from localStorage
+    let cart = JSON.parse(localStorage.getItem('cart')) || [];
+
+    // Add product to cart
+    cart.push({
+      title: title,
+      price: price,
+      imgSrc: imgSrc,
+      quantity: 1
+    });
+
+    // Save cart back to localStorage
+    localStorage.setItem('cart', JSON.stringify(cart));
+
+    alert(`${title} added to cart!`);
+  });
+});
+
 /* ========= Product Modal for Clicking Images ========= */
 const modal = document.createElement('div');
 modal.id = 'product-modal';

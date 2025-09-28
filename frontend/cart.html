@@ -1,138 +1,116 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Solana Students Africa Project - Cart</title>
-<link rel="stylesheet" href="/style.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cart - Solana Marketplace</title>
+  <link rel="stylesheet" href="./css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
 </head>
 <body>
-
-<!-- Header / Navbar -->
-<section id="header-cart">
-  <a href="/index.html"><img src="/logo.jpg" class="logo" alt="Logo"></a>
-  <div>
-    <ul id="navbar">
-      <li><a href="/index.html">Home</a></li>
-      <li><a href="/Product.html">Product</a></li>
-      <li><a href="/auction.html">Auction</a></li>
-      <li id="Lg-bag"><a href="/Cart.html"><i class="fa-solid fa-basket-shopping"></i></a></li>
-      <a href="#" id="close"><i class="fa-solid fa-xmark"></i></a>
-    </ul>
-  </div>
-  <div id="mobile">
-    <a href="/Cart.html"><i class="fa-solid fa-basket-shopping"></i></a>
-    <i id="bar" class="fa-solid fa-bars"></i>
-  </div>
-</section>
-
-<section id="cart-header">
-  <h1>SHOP WITH US TODAY!!</h1>
-  <p>Save more with coupons and 70% off!</p>
-</section>
-
-<!-- Product List -->
-<section id="Product1" class="section-p1">
-  <div class="pro-container">
-    <!-- Example product card -->
-    <div class="pro" onclick="window.location.href='/product.html';">
-      <img src="/img orig/phone 4.jpeg" alt="iPhone 14">
-      <div class="des">
-        <span>SCM</span>
-        <h5>IPHONE 14</h5>
-        <div class="star">
-          <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
-        </div>
-        <h4>0.091 Sol</h4>
-      </div>
-      <a href="#"><i class="fa-solid fa-basket-shopping"></i></a>
-    </div>
-
-    <!-- Repeat other products with absolute paths -->
-    <!-- Example: <img src="/img orig/watch 6.jpg" ...> -->
-  </div>
-</section>
-
-<!-- Cart Table -->
-<section id="cart" class="section-p1 section-m1">
-  <table width="100%">
-    <thead>
-      <tr>
-        <td>Remove</td>
-        <td>Image</td>
-        <td>Product</td>
-        <td>Price</td>
-        <td>Quantity</td>
-        <td>SUM TOTAL</td>
-      </tr>
-    </thead>
-    <tbody>
-       <tfoot>
-    <tr>
-      <td colspan="5" style="text-align:right"><strong>Grand Total:</strong></td>
-      <td id="grandTotal">0.000 Sol</td>
-    </tr>
-  </tfoot>
-      <tr>
-        <td><a href="#"><i class="far fa-times-circle"></i></a></td>
-        <td><img src="/img orig/phone 4.jpeg" alt=""></td>
-        <td>IPHONE 14</td>
-        <td>0.091 Sol</td>
-        <td><input type="number" value="1"></td>
-        <td>0.091</td>
-      </tr>
-      <!-- Repeat other cart items as needed -->
-    </tbody>
-  </table>
-</section>
-
-<!-- Student ID Input -->
-<section id="cart-add" class="section-p1 section-m1">
-  <div class="Student-id">
-    <h3>Provide Student ID</h3>
+  <!-- Header Section -->
+  <section id="header">
+    <a href="#"><img src="img/logo.jpg" class="logo" alt=""></a>
     <div>
-      <input type="text" placeholder="Enter your student ID">
-      <button class="normal">SUBMIT</button>
+      <ul id="navbar">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="Product.html">Product</a></li>
+        <li><a href="auction.html">Auction</a></li>
+        <li id="Lg-bag"><a class="active" href="Cart.html"><i class="fa-solid fa-basket-shopping"></i></a></li>
+        <li><button id="connectWalletBtn" class="normal">Connect Wallet</button></li>
+        <a href="#" id="close"><i class="fa-solid fa-xmark"></i></a>
+      </ul>
     </div>
-  </div>
-</section>
-
-<!-- Payment Section -->
-<section id="payment" class="section-p1">
-  <div class="payment-card">
-    <h2>Make a Payment</h2>
-    <div class="form-group">
-      <label for="amount">Amount (SOL):</label>
-      <input type="number" id="amount" value="0.1" min="0.001" step="0.001">
+    <div id="mobile">
+      <a href="Cart.html"><i class="fa-solid fa-basket-shopping"></i></a>
+      <i id="bar" class="fa-solid fa-bars"></i>
     </div>
-    <div class="form-group">
-      <label for="recipient">Recipient Address:</label>
-      <input type="text" id="recipient" placeholder="Enter Solana wallet address">
+  </section>
+
+  <!-- Cart Section -->
+  <section id="cart" class="section-p1">
+    <h1>Your Cart</h1>
+    <table id="cart-table">
+      <thead>
+        <tr>
+          <th>Image</th>
+          <th>Product</th>
+          <th>Price (SOL)</th>
+          <th>Quantity</th>
+          <th>Remove</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Items will be loaded here dynamically -->
+      </tbody>
+    </table>
+    <div class="cart-summary">
+      <h3>Total: <span id="total-price">0.000</span> SOL</h3>
+      <button id="checkout-btn" class="normal">Checkout</button>
     </div>
-    <button id="pay" class="pay-button">PAY</button>
-  </div>
-</section>
+  </section>
 
-<!-- Pagination -->
-<section id="pagination" class="section-p1">
-  <a href="#">1</a>
-  <a href="#">2</a>
-  <a href="#"><i class="fa-solid fa-arrow-right"></i></a>
-</section>
+  <script src="./js/script.js"></script>
+  <script type="module" src="./js/wallet.js"></script>
 
-<!-- Newsletter -->
-<section id="Newsletter" class="section-p1 section-m1">
-  <div class="newstext">
-    <h4>Sign up for our Newsletters</h4>
-    <p>Get Email updates about our latest shop and <span>special orders</span></p>
-  </div>
-  <div id="form" class="form">
-    <input type="text" placeholder="Input your Email Address">
-    <button class="normal">Sign UP</button>
-  </div>
-</section>
+  <script>
+    // ==============================
+    // Cart Page JS
+    // ==============================
+    document.addEventListener('DOMContentLoaded', () => {
+      const cartTableBody = document.querySelector('#cart-table tbody');
+      const totalPriceElem = document.getElementById('total-price');
 
-<script src="/script.js"></script>
+      // Load cart from localStorage
+      let cart = JSON.parse(localStorage.getItem('cart')) || [];
+
+      function renderCart() {
+        cartTableBody.innerHTML = '';
+        let total = 0;
+
+        cart.forEach((item, index) => {
+          total += item.price * item.quantity;
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td><img src="${item.imgSrc}" alt="${item.title}" style="width:50px;"></td>
+            <td>${item.title}</td>
+            <td>${item.price.toFixed(3)}</td>
+            <td><input type="number" min="1" value="${item.quantity}" data-index="${index}" class="qty-input"></td>
+            <td><button data-index="${index}" class="remove-btn">Remove</button></td>
+          `;
+          cartTableBody.appendChild(row);
+        });
+
+        totalPriceElem.textContent = total.toFixed(3);
+      }
+
+      renderCart();
+
+      // Update quantity
+      cartTableBody.addEventListener('change', (e) => {
+        if (e.target.classList.contains('qty-input')) {
+          const idx = e.target.dataset.index;
+          cart[idx].quantity = parseInt(e.target.value);
+          localStorage.setItem('cart', JSON.stringify(cart));
+          renderCart();
+        }
+      });
+
+      // Remove item
+      cartTableBody.addEventListener('click', (e) => {
+        if (e.target.classList.contains('remove-btn')) {
+          const idx = e.target.dataset.index;
+          cart.splice(idx, 1);
+          localStorage.setItem('cart', JSON.stringify(cart));
+          renderCart();
+        }
+      });
+
+      // Checkout
+      document.getElementById('checkout-btn').addEventListener('click', () => {
+        alert('Checkout functionality coming soon!');
+      });
+    });
+  </script>
 </body>
 </html>
