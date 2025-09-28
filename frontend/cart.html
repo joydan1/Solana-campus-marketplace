@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cart - Solana Marketplace</title>
+  <title>cart - Solana Marketplace</title>
   <link rel="stylesheet" href="/style.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
 </head>
@@ -14,20 +14,20 @@
     <div>
       <ul id="navbar">
         <li><a href="index.html">Home</a></li>
-        <li><a href="Product.html">Product</a></li>
+        <li><a href="product.html">Product</a></li>
         <li><a href="auction.html">Auction</a></li>
-        <li id="Lg-bag"><a class="active" href="Cart.html"><i class="fa-solid fa-basket-shopping"></i></a></li>
+        <li id="Lg-bag"><a class="active" href="cart.html"><i class="fa-solid fa-basket-shopping"></i></a></li>
         <li><button id="connectWalletBtn" class="normal">Connect Wallet</button></li>
         <a href="#" id="close"><i class="fa-solid fa-xmark"></i></a>
       </ul>
     </div>
     <div id="mobile">
-      <a href="Cart.html"><i class="fa-solid fa-basket-shopping"></i></a>
+      <a href="cart.html"><i class="fa-solid fa-basket-shopping"></i></a>
       <i id="bar" class="fa-solid fa-bars"></i>
     </div>
   </section>
 
-  <!-- Cart Section -->
+  <!-- cart Section -->
   <section id="cart" class="section-p1">
     <h1>Your Cart</h1>
     <table id="cart-table">
@@ -52,65 +52,6 @@
 
   <script src="./js/script.js"></script>
   <script type="module" src="./js/wallet.js"></script>
-
-  <script>
-    // ==============================
-    // Cart Page JS
-    // ==============================
-    document.addEventListener('DOMContentLoaded', () => {
-      const cartTableBody = document.querySelector('#cart-table tbody');
-      const totalPriceElem = document.getElementById('total-price');
-
-      // Load cart from localStorage
-      let cart = JSON.parse(localStorage.getItem('cart')) || [];
-
-      function renderCart() {
-        cartTableBody.innerHTML = '';
-        let total = 0;
-
-        cart.forEach((item, index) => {
-          total += item.price * item.quantity;
-          const row = document.createElement('tr');
-          row.innerHTML = `
-            <td><img src="${item.imgSrc}" alt="${item.title}" style="width:50px;"></td>
-            <td>${item.title}</td>
-            <td>${item.price.toFixed(3)}</td>
-            <td><input type="number" min="1" value="${item.quantity}" data-index="${index}" class="qty-input"></td>
-            <td><button data-index="${index}" class="remove-btn">Remove</button></td>
-          `;
-          cartTableBody.appendChild(row);
-        });
-
-        totalPriceElem.textContent = total.toFixed(3);
-      }
-
-      renderCart();
-
-      // Update quantity
-      cartTableBody.addEventListener('change', (e) => {
-        if (e.target.classList.contains('qty-input')) {
-          const idx = e.target.dataset.index;
-          cart[idx].quantity = parseInt(e.target.value);
-          localStorage.setItem('cart', JSON.stringify(cart));
-          renderCart();
-        }
-      });
-
-      // Remove item
-      cartTableBody.addEventListener('click', (e) => {
-        if (e.target.classList.contains('remove-btn')) {
-          const idx = e.target.dataset.index;
-          cart.splice(idx, 1);
-          localStorage.setItem('cart', JSON.stringify(cart));
-          renderCart();
-        }
-      });
-
-      // Checkout
-      document.getElementById('checkout-btn').addEventListener('click', () => {
-        alert('Checkout functionality coming soon!');
-      });
-    });
-  </script>
+    
 </body>
 </html>
