@@ -30,25 +30,28 @@
 <!-- Auction Upload Form -->
 <section class="section-p1">
   <h2>Upload Item for Auction</h2>
-  <form id="upload-item-form">
-    <input type="text" id="item-name" placeholder="Item Name" required>
-    <textarea id="item-description" placeholder="Description" required></textarea>
-    <input type="number" id="item-price" placeholder="Starting Price (SOL)" required step="0.001">
-    <input type="file" id="item-image" accept="image/*" required>
-    <input type="datetime-local" id="auction-end-date" required>
-    <button type="submit" class="normal">Upload Item</button>
-  </form>
+  <form id="upload-item-form" enctype="multipart/form-data">
+  <input type="text" id="item-name" placeholder="Item Name" required>
+  <textarea id="item-description" placeholder="Description" required></textarea>
+  <input type="number" id="item-price" placeholder="Starting Price (SOL)" required step="0.001">
+  <input type="file" id="item-image" accept="image/*" required>
+  <input type="datetime-local" id="auction-end-date" required>
+  <button type="submit" class="normal">Upload Item</button>
+  <span id="upload-message" style="display:block; margin-top:5px; font-weight:bold;"></span>
+</form>
 </section>
-
 <!-- Auction Items List -->
 <section class="section-p1">
   <h2>Live Auctions</h2>
   <ul id="auction-items"></ul>
 </section>
-
+<div id="toast-container" style="
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 10000;
+"></div>
 <!-- Scripts -->
-<script type="module" src="auction.js"></script>
 <script type="module" src="script.js"></script>
-<script src="/auction.js"></script>
 </body>
 </html>
