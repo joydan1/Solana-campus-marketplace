@@ -1,14 +1,13 @@
 // wallet.js
 import * as web3 from 'https://cdn.jsdelivr.net/npm/@solana/web3.js/+esm';
-import { Program, AnchorProvider, web3 as anchorWeb3 } from 'https://cdn.jsdelivr.net/npm/@project-serum/anchor/+esm';
+import { Program, AnchorProvider } from 'https://cdn.jsdelivr.net/npm/@project-serum/anchor/+esm';
 import idl from './idl.json' assert { type: 'json' };
-import { clusterApiUrl, Connection, PublicKey, LAMPORTS_PER_SOL, SystemProgram, Transaction } from 'https://cdn.jsdelivr.net/npm/@solana/web3.js/+esm';
 import { PROGRAM_ID } from './config.js'; 
 
 // ----------------------
 // Solana Connection
 // ----------------------
-export const connection = new Connection(clusterApiUrl('devnet'), 'confirmed');
+export const connection = new web3.Connection(web3.clusterApiUrl('devnet'), 'confirmed');
 
 // ----------------------
 // Phantom Wallet Connection
@@ -41,7 +40,7 @@ export function getProvider() {
 
 export function getProgram() {
   const provider = getProvider();
-  return new Program(idl, new PublicKey(PROGRAM_ID), provider);
+  return new Program(idl, new web3.PublicKey(PROGRAM_ID), provider);
 }
 
 // ----------------------
@@ -53,16 +52,17 @@ export async function sendSol(toPubkeyStr, amountSol) {
   const fromPubkey = provider.publicKey;
   if (!fromPubkey) throw new Error('Wallet not connected.');
 
-  const toPubkey = new PublicKey(toPubkeyStr);
-  const lamports = Math.round(Number(amountSol) * LAMPORTS_PER_SOL);
+  const toPubkey = new web3.PublicKey(toPubkeyStr);
+  const lamports = Math.round(Number(amountSol) * web3.LAMPORTS_PER_SOL);
 
-  const tx = new Transaction().add(SystemProgram.transfer({ fromPubkey, toPubkey, lamports }));
+  const tx = new web3.Transaction().add(web3.SystemProgram.transfer({ fromPubkey, toPubkey, lamports }));
   const latest = await connection.getLatestBlockhash('finalized');
   tx.recentBlockhash = latest.blockhash;
   tx.feePayer = fromPubkey;
 
   try {
-    const signed = await provider.signAndSendTransaction?.(tx) ?? await provider.signTransaction(tx).then(stx => connection.sendRawTransaction(stx.serialize()));
+    const signed = await provider.signAndSendTransaction?.(tx) 
+      ?? await provider.signTransaction(tx).then(stx => connection.sendRawTransaction(stx.serialize()));
     await connection.confirmTransaction(signed.signature || signed, 'confirmed');
     return signed.signature || signed;
   } catch (err) {
@@ -100,14 +100,14 @@ export async function buyItem(itemPublicKey) {
   const provider = getProvider();
   const program = getProgram();
 
-  const itemAccount = await program.account.itemAccount.fetch(new PublicKey(itemPublicKey));
+  const itemAccount = await program.account.itemAccount.fetch(new web3.PublicKey(itemPublicKey));
 
   await program.methods
     .buyItem()
     .accounts({
-      item: new PublicKey(itemPublicKey),
+      item: new web3.PublicKey(itemPublicKey),
       buyer: provider.wallet.publicKey,
-      seller: itemAccount.seller,
+      seller: new web3.PublicKey(itemAccount.seller),
       systemProgram: web3.SystemProgram.programId,
     })
     .rpc();
@@ -123,14 +123,14 @@ export async function confirmPurchase(itemPublicKey) {
   const provider = getProvider();
   const program = getProgram();
 
-  const itemAccount = await program.account.itemAccount.fetch(new PublicKey(itemPublicKey));
+  const itemAccount = await program.account.itemAccount.fetch(new web3.PublicKey(itemPublicKey));
 
   await program.methods
     .confirmPurchase()
     .accounts({
-      item: new PublicKey(itemPublicKey),
+      item: new web3.PublicKey(itemPublicKey),
       buyer: provider.wallet.publicKey,
-      seller: itemAccount.seller,
+      seller: new web3.PublicKey(itemAccount.seller),
       systemProgram: web3.SystemProgram.programId,
     })
     .rpc();
