@@ -155,16 +155,4 @@ export async function confirmPurchase(itemPublicKey) {
 }
 
 // ----------------------
-// Optional: connect wallet on page load if already trusted
-// ----------------------
-document.addEventListener('DOMContentLoaded', async () => {
-  if (window.solana && window.solana.isPhantom) {
-    try {
-      const resp = await window.solana.connect({ onlyIfTrusted: true });
-      connectedPubKey = resp.publicKey.toString();
-      console.log('Auto-connected with public key:', connectedPubKey);
-    } catch {
-      // not auto-connected yet
-    }
-  }
-});
+
