@@ -8,63 +8,48 @@ const nav = document.getElementById('navbar');
 const close = document.getElementById('close');
 const mobile = document.getElementById('mobile');
 
-if (bar) {
-    bar.addEventListener('click', () => {
-        nav.classList.add('active');
-        mobile.classList.add('active');
-    });
-}
+if (bar) bar.addEventListener('click', () => {
+    nav.classList.add('active');
+    mobile.classList.add('active');
+});
+if (close) close.addEventListener('click', () => {
+    nav.classList.remove('active');
+    mobile.classList.remove('active');
+});
 
-if (close) {
-    close.addEventListener('click', () => {
+/* ========= Navbar Link Auto-Close ========= */
+document.querySelectorAll('#navbar a').forEach(link => {
+    link.addEventListener('click', () => {
         nav.classList.remove('active');
         mobile.classList.remove('active');
     });
-}
-/* ========= Navbar Link Auto-Close on Mobile ========= */
-const navLinks = document.querySelectorAll('#navbar a');
-
-navLinks.forEach(link => {
-  link.addEventListener('click', () => {
-    const nav = document.getElementById('navbar');
-    const mobile = document.getElementById('mobile');
-
-    if (nav.classList.contains('active')) nav.classList.remove('active');
-    if (mobile.classList.contains('active')) mobile.classList.remove('active');
-  });
 });
 
 /* ========= Product Image Switch ========= */
-const products = document.querySelectorAll('.pro');
-products.forEach((product) => {
+document.querySelectorAll('.pro').forEach(product => {
     const mainImg = product.querySelector('img');
-    const smallImgs = product.querySelectorAll('.small-img');
-
-    smallImgs.forEach((smallImg) => {
-        smallImg.addEventListener('click', () => {
-            mainImg.src = smallImg.src;
-        });
+    product.querySelectorAll('.small-img').forEach(smallImg => {
+        smallImg.addEventListener('click', () => mainImg.src = smallImg.src);
     });
 });
 
 /* ========= Pagination Links ========= */
-const paginationLinks = document.querySelectorAll('#pagination a');
-paginationLinks.forEach((link, index) => {
-    link.addEventListener('click', event => {
-        event.preventDefault();
-        if (index === 0) window.location.href = 'index.html';
-        else if (index === 1) window.location.href = 'product.html';
-        else if (link.querySelector('i')) window.location.href = 'auction.html';
+document.querySelectorAll('#pagination a').forEach((link, index) => {
+    link.addEventListener('click', e => {
+        e.preventDefault();
+        if(index===0) window.location.href='index.html';
+        else if(index===1) window.location.href='product.html';
+        else if(link.querySelector('i')) window.location.href='auction.html';
     });
 });
 
 /* ========= Auction Item Upload ========= */
 const uploadItemForm = document.getElementById('upload-item-form');
 const auctionItemsList = document.getElementById('auction-items');
-const uploadMessage = document.getElementById('upload-message'); // optional span for inline feedback
+const uploadMessage = document.getElementById('upload-message');
 
-if (uploadItemForm) {
-  uploadItemForm.addEventListener('submit', async (e) => {
+if(uploadItemForm){
+  uploadItemForm.addEventListener('submit', async e => {
     e.preventDefault();
 
     const itemName = document.getElementById('item-name').value.trim();
@@ -73,17 +58,16 @@ if (uploadItemForm) {
     const itemImage = document.getElementById('item-image').files[0];
     const auctionEndDate = document.getElementById('auction-end-date').value;
 
-    if (!itemName || !itemDescription || !itemPrice || !itemImage || !auctionEndDate) {
-      if (uploadMessage) uploadMessage.textContent = 'Please fill out all fields';
-      return;
+    if(!itemName||!itemDescription||!itemPrice||!itemImage||!auctionEndDate){
+        uploadMessage.textContent = 'Please fill out all fields';
+        return;
+    }
+    if(!itemImage.type.startsWith('image/')){
+        uploadMessage.textContent = 'Invalid file type. Only images allowed';
+        return;
     }
 
-    if (!itemImage.type.startsWith("image/")) {
-      if (uploadMessage) uploadMessage.textContent = 'Invalid file type. Only images are allowed.';
-      return;
-    }
-
-    try {
+    try{
       const formData = new FormData();
       formData.append('itemName', itemName);
       formData.append('itemDescription', itemDescription);
@@ -91,338 +75,227 @@ if (uploadItemForm) {
       formData.append('itemImage', itemImage);
       formData.append('auctionEndDate', auctionEndDate);
 
-      const response = await fetch('/api/upload-item', { method: 'POST', body: formData });
+      const response = await fetch('/api/upload-item',{method:'POST', body:formData});
       const data = await response.json();
 
-      if (response.ok) {
-        // Inline success message
-        if (uploadMessage) {
-          uploadMessage.style.color = 'green';
-          uploadMessage.textContent = '✅ Item uploaded successfully!';
-        }
+      if(response.ok){
+          uploadMessage.style.color='green';
+          uploadMessage.textContent='✅ Item uploaded successfully!';
+          uploadItemForm.reset();
 
-        uploadItemForm.reset();
-
-        const itemHtml = `
-          <li>
+          // Add new item to DOM
+          const li = document.createElement('li');
+          li.innerHTML = `
             <h2>${data.itemName}</h2>
             <p>${data.itemDescription}</p>
             <p>Starting Price: ${data.itemPrice} SOL</p>
             <img src="${data.itemImage}" alt="${data.itemName}">
             <p>Auction End Date: ${data.auctionEndDate}</p>
-            <button class="buyBtn" data-item-pubkey="${data.itemPubkey}" data-seller-pubkey="${data.sellerPubkey || ''}" disabled>
-              Buy Now
-            </button>
-          </li>
-        `;
-        auctionItemsList.innerHTML += itemHtml;
+            <button class="buyBtn" data-item-pubkey="${data.itemPubkey}" data-seller-pubkey="${data.sellerPubkey || ''}" disabled>Buy Now</button>
+          `;
+          auctionItemsList.appendChild(li);
 
-        // Attach Buy button to new item
-        const lastBtn = auctionItemsList.querySelector('li:last-child .buyBtn');
-        lastBtn.addEventListener('click', async () => {
-          const itemPubkey = lastBtn.dataset.itemPubkey;
-          const sellerPubkey = lastBtn.dataset.sellerPubkey || null;
-
-          if (!itemPubkey) return showToast('❌ Missing item public key!');
-          try {
-            await buyItem(itemPubkey, sellerPubkey);
-            showToast('✅ Purchase successful!');
-          } catch (err) {
-            console.error(err);
-            showToast('❌ Purchase failed. Check console.');
-          }
-        });
-
-        // Enable Buy button if wallet connected
-        if (window.solana && window.solana.isConnected) lastBtn.disabled = false;
-
+          attachBuyButtons(); // Ensure button is clickable
       } else {
-        if (uploadMessage) {
-          uploadMessage.style.color = 'red';
-          uploadMessage.textContent = data.message || 'Upload failed';
-        }
+          uploadMessage.style.color='red';
+          uploadMessage.textContent=data.message||'Upload failed';
       }
-
-    } catch (err) {
-      console.error(err);
-      if (uploadMessage) {
-        uploadMessage.style.color = 'red';
-        uploadMessage.textContent = 'Upload failed. Check console.';
-      }
+    } catch(err){
+        console.error(err);
+        uploadMessage.style.color='red';
+        uploadMessage.textContent='Upload failed. Check console';
     }
   });
 }
 
+/* ========= Buy Button Handler ========= */
+function attachBuyButtons(){
+    document.querySelectorAll('.buyBtn').forEach(btn=>{
+        if(btn.dataset.listenerAttached) return; // avoid duplicate listeners
+        btn.dataset.listenerAttached = true;
+        btn.addEventListener('click', async ()=>{
+            const itemPubkey = btn.dataset.itemPubkey;
+            const sellerPubkey = btn.dataset.sellerPubkey || null;
+            if(!itemPubkey) return showToast('❌ Missing item public key!');
+            try{
+                await buyItem(itemPubkey, sellerPubkey);
+                showToast('✅ Purchase successful!');
+            } catch(err){
+                console.error(err);
+                showToast('❌ Purchase failed. Check console.');
+            }
+        });
+    });
+}
+
 /* ========= Registration Form ========= */
 const registerForm = document.getElementById('register-form');
-const errorMessage = document.getElementById('error-message'); // existing span for messages
-
-if (registerForm) {
-  registerForm.addEventListener('submit', async (e) => {
+const errorMessage = document.getElementById('error-message');
+if(registerForm){
+  registerForm.addEventListener('submit', async e=>{
     e.preventDefault();
+    const username=document.getElementById('username').value.trim();
+    const email=document.getElementById('email').value.trim();
+    const password=document.getElementById('password').value;
+    const confirmPassword=document.getElementById('confirm-password').value;
 
-    const username = document.getElementById('username').value.trim();
-    const email = document.getElementById('email').value.trim();
-    const password = document.getElementById('password').value;
-    const confirmPassword = document.getElementById('confirm-password').value;
-
-    // Validation
-    if (!username || !email || !password || !confirmPassword) {
-      errorMessage.textContent = 'Please fill out all fields';
-      return;
+    if(!username||!email||!password||!confirmPassword){
+        errorMessage.textContent='Please fill out all fields';
+        return;
+    }
+    if(password!==confirmPassword){
+        errorMessage.textContent='Passwords do not match';
+        return;
     }
 
-    if (password !== confirmPassword) {
-      errorMessage.textContent = 'Passwords do not match';
-      return;
-    }
-
-    try {
-      const response = await fetch('/api/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, email, password })
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        errorMessage.style.color = 'green';
-        errorMessage.textContent = '✅ Registration successful!';
-        registerForm.reset(); // Clear the form
-      } else {
-        errorMessage.style.color = 'red';
-        errorMessage.textContent = data.message || 'Error registering user';
-      }
-
-      console.log(data);
-    } catch (err) {
-      console.error(err);
-      errorMessage.style.color = 'red';
-      errorMessage.textContent = 'Error registering user. Check console.';
+    try{
+        const response = await fetch('/api/register',{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({username,email,password})
+        });
+        const data = await response.json();
+        if(response.ok){
+            errorMessage.style.color='green';
+            errorMessage.textContent='✅ Registration successful!';
+            registerForm.reset();
+        } else {
+            errorMessage.style.color='red';
+            errorMessage.textContent=data.message||'Error registering user';
+        }
+    } catch(err){
+        console.error(err);
+        errorMessage.style.color='red';
+        errorMessage.textContent='Error registering user. Check console.';
     }
   });
 }
 
 /* ========= Solana Wallet Integration ========= */
-import { connectWallet } from './wallet.js';
+window.addEventListener('DOMContentLoaded', ()=>{
+    const connectWalletBtn = document.getElementById("connectWalletBtn");
+    if(!connectWalletBtn) return;
 
-window.addEventListener('DOMContentLoaded', () => {
-  const connectWalletBtn = document.getElementById("connectWalletBtn");
+    const updateButton = (pubKey)=>{
+        connectWalletBtn.textContent = `Connected: ${pubKey.slice(0,4)}...${pubKey.slice(-4)}`;
+        document.querySelectorAll('.buyBtn').forEach(btn=>btn.disabled=false);
+    };
 
-  if (!connectWalletBtn) return;
-
-  // Update button text if already connected
-  if (window.solana && window.solana.isPhantom && window.solana.isConnected) {
-    const pubKey = window.solana.publicKey.toString();
-    connectWalletBtn.textContent = `Connected: ${pubKey.slice(0,4)}...${pubKey.slice(-4)}`;
-  }
-
-  // Click listener
-  connectWalletBtn.addEventListener('click', async () => {
-    // Phantom check
-    if (!window.solana || !window.solana.isPhantom) {
-      alert("Phantom wallet not found! Please install it.");
-      window.open("https://phantom.app/", "_blank");
-      return;
+    if(window.solana && window.solana.isPhantom && window.solana.isConnected){
+        updateButton(window.solana.publicKey.toString());
     }
 
-    try {
-      // Connect wallet
-      const pubKey = await connectWallet();
-      connectWalletBtn.textContent = `Connected: ${pubKey.slice(0,4)}...${pubKey.slice(-4)}`;
-      console.log("Wallet connected:", pubKey);
-    } catch (err) {
-      console.error("Wallet connection failed:", err);
-      alert("Wallet connection failed. Check console.");
-    }
-  });
+    connectWalletBtn.addEventListener('click', async ()=>{
+        if(!window.solana || !window.solana.isPhantom){
+            alert("Phantom wallet not found! Please install it.");
+            window.open("https://phantom.app/", "_blank");
+            return;
+        }
+        try{
+            const pubKey = await connectWallet();
+            updateButton(pubKey);
+        } catch(err){
+            console.error("Wallet connection failed:",err);
+            alert("Wallet connection failed. Check console.");
+        }
+    });
 
-  // Optional: auto-update button if wallet connection changes
-  if (window.solana) {
-    window.solana.on("connect", (publicKey) => {
-      connectWalletBtn.textContent = `Connected: ${publicKey.toString().slice(0,4)}...${publicKey.toString().slice(-4)}`;
-    });
-    window.solana.on("disconnect", () => {
-      connectWalletBtn.textContent = "Connect Wallet";
-    });
-  }
+    if(window.solana){
+        window.solana.on("connect", (publicKey)=>{
+            updateButton(publicKey.toString());
+        });
+        window.solana.on("disconnect", ()=>{
+            connectWalletBtn.textContent="Connect Wallet";
+            document.querySelectorAll('.buyBtn').forEach(btn=>btn.disabled=true);
+        });
+    }
 });
-/* ========= Disable Buy Buttons Until Wallet Connected ========= */
-const buyButtons = document.querySelectorAll('.buyBtn');
-
-// Initially disable all Buy buttons
-buyButtons.forEach(btn => btn.disabled = true);
-
-// Function to enable Buy buttons
-function enableBuyButtons() {
-  buyButtons.forEach(btn => btn.disabled = false);
-}
-
-// Listen for wallet connection
-if (window.solana && window.solana.isPhantom) {
-  if (window.solana.isConnected) {
-    enableBuyButtons();
-  }
-
-  window.solana.on('connect', () => {
-    enableBuyButtons();
-  });
-
-  window.solana.on('disconnect', () => {
-    buyButtons.forEach(btn => btn.disabled = true);
-  });
-}
 
 /* ========= Cart Functionality ========= */
 let cartCount = 0;
 const cartIcon = document.querySelector('#Lg-bag a');
 const cartBadge = document.createElement('span');
-cartBadge.id = 'cart-count';
-cartBadge.textContent = cartCount;
-cartBadge.style.cssText = `
-    position: absolute;
-    top: -10px;
-    right: -10px;
-    background: red;
-    color: white;
-    border-radius: 50%;
-    padding: 2px 6px;
-    font-size: 12px;
-`;
-cartIcon.style.position = 'relative';
+cartBadge.id='cart-count';
+cartBadge.textContent=cartCount;
+cartBadge.style.cssText=`position:absolute;top:-10px;right:-10px;background:red;color:white;border-radius:50%;padding:2px 6px;font-size:12px;`;
+cartIcon.style.position='relative';
 cartIcon.appendChild(cartBadge);
 
-document.querySelectorAll('.fa-basket-shopping').forEach((btn) => {
-  btn.addEventListener('click', () => {
-    cartCount++;
-    cartBadge.textContent = cartCount;
-    const productName = btn.closest('.pro').querySelector('h5').textContent;
-    alert(`Added "${productName}" to cart!`);
-  });
+document.querySelectorAll('.fa-basket-shopping').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+        cartCount++;
+        cartBadge.textContent=cartCount;
+        const productName = btn.closest('.pro').querySelector('h5').textContent;
+        alert(`Added "${productName}" to cart!`);
+    });
 });
 
 /* ========= Add to Cart from Products ========= */
-document.querySelectorAll('.pro a').forEach((btn) => {
-  btn.addEventListener('click', (e) => {
-    e.preventDefault();
-    const card = btn.closest('.pro');
-    const title = card.querySelector('h5').innerText;
-    const price = parseFloat(card.querySelector('h4').innerText.replace('Sol','').trim());
-    const imgSrc = card.querySelector('img').src;
+document.querySelectorAll('.pro a').forEach(btn=>{
+    btn.addEventListener('click', e=>{
+        e.preventDefault();
+        const card = btn.closest('.pro');
+        const title = card.querySelector('h5').innerText;
+        const price = parseFloat(card.querySelector('h4').innerText.replace('Sol','').trim());
+        const imgSrc = card.querySelector('img').src;
 
-    let cart = JSON.parse(localStorage.getItem('cart')) || [];
-    cart.push({ title, price, imgSrc, quantity:1 });
-    localStorage.setItem('cart', JSON.stringify(cart));
+        let cart = JSON.parse(localStorage.getItem('cart')) || [];
+        cart.push({ title, price, imgSrc, quantity:1 });
+        localStorage.setItem('cart', JSON.stringify(cart));
 
-  showToast(`✅ Added "${productName}" to cart!`);
-  });
+        showToast(`✅ Added "${title}" to cart!`);
+    });
 });
 
 /* ========= Product Modal ========= */
 const modal = document.createElement('div');
-modal.id = 'product-modal';
-modal.style.cssText = `
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    background: rgba(0,0,0,0.8);
-    display: none;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-`;
+modal.id='product-modal';
+modal.style.cssText=`position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);display:none;justify-content:center;align-items:center;z-index:1000;`;
 document.body.appendChild(modal);
 
 const modalImg = document.createElement('img');
-modalImg.style.cssText = `
-    max-width: 80%;
-    max-height: 80%;
-    border-radius: 10px;
-    box-shadow: 0 0 20px white;
-`;
+modalImg.style.cssText=`max-width:80%;max-height:80%;border-radius:10px;box-shadow:0 0 20px white;`;
 modal.appendChild(modalImg);
 
-modal.addEventListener('click', () => modal.style.display = 'none');
-
-document.querySelectorAll('.pro img').forEach(img => {
-  img.style.cursor = 'pointer';
-  img.addEventListener('click', () => {
-    modalImg.src = img.src;
-    modal.style.display = 'flex';
-  });
+modal.addEventListener('click', ()=>modal.style.display='none');
+document.querySelectorAll('.pro img').forEach(img=>{
+    img.style.cursor='pointer';
+    img.addEventListener('click', ()=>{
+        modalImg.src=img.src;
+        modal.style.display='flex';
+    });
 });
 
-/* ========= Buy Button (Pre-existing items) ========= */
-document.querySelectorAll('.buyBtn').forEach((btn) => {
-  btn.addEventListener('click', async () => {
-    const itemPubkey = btn.dataset.itemPubkey;
-    const sellerPubkey = btn.dataset.sellerPubkey || null;
-
-    if (!itemPubkey) return alert('Missing item public key!');
-    try {
-      await buyItem(itemPubkey, sellerPubkey);
-      showtoast('✅ Purchase successful!');
-    } catch (err) {
-      console.error(err);
-      showtoast('Purchase failed. Check console for details.');
-    }
-  });
-});
 /* ========= Newsletter Subscription ========= */
 const newsletterForm = document.getElementById('newsletter-form');
 const newsletterMessage = document.getElementById('newsletter-message');
-
-if (newsletterForm) {
-  newsletterForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const email = document.getElementById('newsletter-email').value.trim();
-    if (!email) {
-      newsletterMessage.textContent = "Please enter a valid email.";
-      return;
-    }
-
-    try {
-      const { data, error } = await supabase
-        .from('newsletter')
-        .insert([{ email }]);
-
-      if (error) {
-        console.error(error);
-        newsletterMessage.textContent = "Subscription failed. Try again.";
-      } else {
-        newsletterMessage.textContent = "✅ Successfully subscribed!";
-        newsletterForm.reset();
-      }
-    } catch (err) {
-      console.error(err);
-      newsletterMessage.textContent = "Subscription failed. Check console.";
-    }
-  });
+if(newsletterForm){
+    newsletterForm.addEventListener('submit', async e=>{
+        e.preventDefault();
+        const email = document.getElementById('newsletter-email').value.trim();
+        if(!email){ newsletterMessage.textContent="Please enter a valid email."; return;}
+        try{
+            const {data,error} = await supabase.from('newsletter').insert([{email}]);
+            if(error){ console.error(error); newsletterMessage.textContent="Subscription failed. Try again."; }
+            else{ newsletterMessage.textContent="✅ Successfully subscribed!"; newsletterForm.reset(); }
+        }catch(err){ console.error(err); newsletterMessage.textContent="Subscription failed. Check console."; }
+    });
 }
+
 /* ========= Toast Notification ========= */
-function showToast(message, duration = 3000) {
-  const container = document.getElementById('toast-container');
-  if (!container) return;
-
-  const toast = document.createElement('div');
-  toast.textContent = message;
-  toast.style.cssText = `
-    background: rgba(0,0,0,0.8);
-    color: #fff;
-    padding: 10px 15px;
-    margin-top: 10px;
-    border-radius: 5px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.5);
-    animation: slideIn 0.3s ease forwards;
-    font-family: sans-serif;
-  `;
-
-  container.appendChild(toast);
-
-  setTimeout(() => {
-    toast.style.opacity = '0';
-    toast.style.transition = 'opacity 0.5s';
-    setTimeout(() => container.removeChild(toast), 500);
-  }, duration);
+function showToast(message,duration=3000){
+    const container = document.getElementById('toast-container');
+    if(!container) return;
+    const toast=document.createElement('div');
+    toast.textContent=message;
+    toast.style.cssText=`background:rgba(0,0,0,0.8);color:#fff;padding:10px 15px;margin-top:10px;border-radius:5px;box-shadow:0 2px 10px rgba(0,0,0,0.5);animation:slideIn 0.3s ease forwards;font-family:sans-serif;`;
+    container.appendChild(toast);
+    setTimeout(()=>{
+        toast.style.opacity='0';
+        toast.style.transition='opacity 0.5s';
+        setTimeout(()=>container.removeChild(toast),500);
+    },duration);
 }
+
+/* ========= Initialize Buy Buttons for Existing Items ========= */
+attachBuyButtons();
