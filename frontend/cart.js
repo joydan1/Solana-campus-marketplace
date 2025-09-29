@@ -1,60 +1,77 @@
+// cart.js
 document.addEventListener("DOMContentLoaded", () => {
   const cartTable = document.querySelector("#cart-table tbody");
-  const grandTotalEl = document.getElementById("total-price");
+  const grandTotalEl = document.getElementById("grandTotal");
+  const checkoutBtn = document.getElementById("checkout-btn");
 
-  function updateTotals() {
-    let rows = cartTable.querySelectorAll("tr");
-    let grandTotal = 0;
-    rows.forEach((row) => {
-      const priceCell = row.cells[2]; //  Corrected index
-      const qtyInput = row.cells[3].querySelector("input");
-      let price = parseFloat(priceCell.textContent);
-      let quantity = parseInt(qtyInput.value);
-      let total = price * quantity;
-      grandTotal += total;
+  // Load cart from localStorage
+  let cart = JSON.parse(localStorage.getItem("cart")) || [];
+
+  function renderCart() {
+    cartTable.innerHTML = "";
+    cart.forEach((item, index) => {
+      const row = document.createElement("tr");
+
+      row.innerHTML = `
+        <td><img src="${item.imgSrc}" style="width:80px;"/></td>
+        <td>${item.title}</td>
+        <td>${item.price.toFixed(3)}</td>
+        <td><input type="number" min="1" value="${item.quantity}" data-index="${index}" /></td>
+        <td><button class="remove-btn" data-index="${index}">Remove</button></td>
+      `;
+      cartTable.appendChild(row);
     });
-
-    grandTotalEl.textContent = grandTotal.toFixed(3);
-    return grandTotal;
+    updateTotals();
   }
 
-  // Update totals initially
-  let grandTotal = updateTotals();
+  function updateTotals() {
+    let total = 0;
+    cart.forEach(item => total += item.price * item.quantity);
+    grandTotalEl.textContent = total.toFixed(3);
+    return total;
+  }
 
-  // Quantity change
-  cartTable.addEventListener("input", (e) => {
+  // Quantity change handler
+  cartTable.addEventListener("input", e => {
     if (e.target.type === "number") {
-      if (e.target.value < 1) e.target.value = 1;
-      grandTotal = updateTotals();
+      const idx = e.target.dataset.index;
+      let qty = parseInt(e.target.value);
+      if (qty < 1) qty = 1;
+      cart[idx].quantity = qty;
+      localStorage.setItem("cart", JSON.stringify(cart));
+      updateTotals();
     }
   });
 
-  // Remove row
-  cartTable.addEventListener("click", (e) => {
-    if (e.target.closest("button.remove-btn")) {
-      e.target.closest("tr").remove();
-      grandTotal = updateTotals();
+  // Remove item handler
+  cartTable.addEventListener("click", e => {
+    if (e.target.classList.contains("remove-btn")) {
+      const idx = e.target.dataset.index;
+      cart.splice(idx, 1);
+      localStorage.setItem("cart", JSON.stringify(cart));
+      renderCart();
     }
   });
 
-  // Phantom wallet payment
-  const payBtn = document.createElement("button");
-  payBtn.textContent = "Pay with Phantom";
-  payBtn.className = "normal";
-  cartTable.parentElement.appendChild(payBtn);
-
-  payBtn.addEventListener("click", async () => {
+  // Phantom payment
+  checkoutBtn.addEventListener("click", async () => {
     if (!window.solana || !window.solana.isPhantom) {
-      alert("Phantom wallet not found. Please install it.");
+      alert("Phantom wallet not found! Install Phantom.");
+      return;
+    }
+
+    if (cart.length === 0) {
+      alert("Cart is empty!");
       return;
     }
 
     try {
-      // Connect to Phantom
+      // Connect Phantom
       const provider = window.solana;
       await provider.connect();
 
-      // ✅ Setup Solana connection (replace with mainnet-beta if live)
+      const totalSOL = updateTotals();
+
       const connection = new window.solanaWeb3.Connection(
         window.solanaWeb3.clusterApiUrl("devnet"),
         "confirmed"
@@ -63,8 +80,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const transaction = new window.solanaWeb3.Transaction().add(
         window.solanaWeb3.SystemProgram.transfer({
           fromPubkey: provider.publicKey,
-          toPubkey: new window.solanaWeb3.PublicKey("5uH1zM1LMqJDfHBRSqvnEN31dC1Z359PoHzQbzcX374d"),
-          lamports: grandTotal * window.solanaWeb3.LAMPORTS_PER_SOL,
+          toPubkey: new window.solanaWeb3.PublicKey("5uH1zM1LMqJDfHBRSqvnEN31dC1Z359PoHzQbzcX374d"), // seller/market wallet
+          lamports: totalSOL * window.solanaWeb3.LAMPORTS_PER_SOL,
         })
       );
 
@@ -75,10 +92,17 @@ document.addEventListener("DOMContentLoaded", () => {
       const signature = await connection.sendRawTransaction(signedTx.serialize());
       await connection.confirmTransaction(signature, "confirmed");
 
-      alert("Payment successful! Tx Signature: " + signature);
+      alert(`✅ Payment successful! Tx: ${signature}`);
+
+      // Clear cart
+      cart = [];
+      localStorage.setItem("cart", JSON.stringify(cart));
+      renderCart();
     } catch (err) {
       console.error(err);
       alert("Payment failed: " + err.message);
     }
   });
+
+  renderCart();
 });

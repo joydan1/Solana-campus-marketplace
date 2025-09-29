@@ -1,9 +1,6 @@
 
 /* styles for desktop screen*/
-
-
-  
-/*Header start */
+ 
 
 #header {
   display: flex;
@@ -37,20 +34,42 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index:1000;
-  position:relative;
+  z-index: 1000;
+
+  /* Desktop defaults */
+
+  height: auto;
+  width: auto;
+  box-shadow: none;
+  padding: 0;
+  transition: none;
+  position: static;
 }
 
 
+#navbar.active {
+  right:0px;
+}
+
 #mobile {
-    display: none;
     justify-items: center;
+    display: none;
+    cursor: pointer;
+    z-index: 1001;
   }
 
 
 
   #close{
     display:none;
+    position: absolute;
+    top:20px;
+    right:20px;
+    font-size:24px;
+    cursor: pointer;
+  }
+  #navbar.active #close{
+    display:block;
   }
 
 #navbar li{
@@ -1056,7 +1075,7 @@ button[type="submit"]:hover {
     box-shadow: 0 40px 60px rgba(0, 0, 0, 0.02);
     color:white;
     padding:80px 0 0 10px;
-    transition: 0.3s;
+    transition: right 0.3s ease;
   }
 #navbar.active {
   right:0px;
@@ -1092,9 +1111,7 @@ button[type="submit"]:hover {
     display:none;
    }
 
-#mobile.active {
-  display: none;
-}
+
 
 #header {
     width: 100%;

@@ -1,7 +1,6 @@
 // wallet.js
 import * as web3 from 'https://cdn.jsdelivr.net/npm/@solana/web3.js/+esm';
 import { Program, AnchorProvider } from 'https://cdn.jsdelivr.net/npm/@project-serum/anchor/+esm';
-import idl from './idl.json' assert { type: 'json' };
 import { PROGRAM_ID } from './config.js';
 
 // ----------------------
@@ -40,14 +39,26 @@ export function getPublicKey() {
 // ----------------------
 // Anchor Provider + Program
 // ----------------------
+
+// Load IDL dynamically (browser-safe)
+let idl = null;
+async function loadIdl() {
+  if (!idl) {
+    const res = await fetch("/idl.json");
+    idl = await res.json();
+  }
+  return idl;
+}
+
 export function getProvider() {
   if (!window.solana || !window.solana.isPhantom) throw new Error('Phantom not detected.');
   return new AnchorProvider(connection, window.solana, { preflightCommitment: 'processed' });
 }
 
-export function getProgram() {
+export async function getProgram() {
   const provider = getProvider();
-  return new Program(idl, new web3.PublicKey(PROGRAM_ID), provider);
+  const idlData = await loadIdl();
+  return new Program(idlData, new web3.PublicKey(PROGRAM_ID), provider);
 }
 
 // ----------------------
@@ -86,7 +97,7 @@ export async function sendSol(toPubkeyStr, amountSol) {
 // ----------------------
 export async function listItem(name, price, category, useEscrow = false) {
   const provider = getProvider();
-  const program = getProgram();
+  const program = await getProgram();
 
   const itemAccount = web3.Keypair.generate();
 
@@ -109,7 +120,7 @@ export async function listItem(name, price, category, useEscrow = false) {
 // ----------------------
 export async function buyItem(itemPublicKey, sellerPubkey = null) {
   const provider = getProvider();
-  const program = getProgram();
+  const program = await getProgram();
   let seller = sellerPubkey;
 
   if (!seller) {
@@ -136,7 +147,7 @@ export async function buyItem(itemPublicKey, sellerPubkey = null) {
 // ----------------------
 export async function confirmPurchase(itemPublicKey) {
   const provider = getProvider();
-  const program = getProgram();
+  const program = await getProgram();
 
   const itemAccount = await program.account.itemAccount.fetch(new web3.PublicKey(itemPublicKey));
 
@@ -153,6 +164,3 @@ export async function confirmPurchase(itemPublicKey) {
   console.log(`✅ Purchase confirmed for item: ${itemPublicKey}`);
   return itemPublicKey;
 }
-
-// ----------------------
-

@@ -1,4 +1,7 @@
-/* ========= Imports ========= */
+<script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.73.0/lib/index.iife.min.js"></script>
+
+/* ===
+====== Imports ========= */
 import { supabase } from './supabaseclient.js';
 import { connectWallet, buyItem } from './wallet.js';
 
@@ -9,19 +12,18 @@ const close = document.getElementById('close');
 const mobile = document.getElementById('mobile');
 
 if (bar) bar.addEventListener('click', () => {
+    console.log('clicked');
     nav.classList.add('active');
-    mobile.classList.add('active');
 });
 if (close) close.addEventListener('click', () => {
+    console.log('closed');
     nav.classList.remove('active');
-    mobile.classList.remove('active');
 });
 
 /* ========= Navbar Link Auto-Close ========= */
 document.querySelectorAll('#navbar a').forEach(link => {
     link.addEventListener('click', () => {
         nav.classList.remove('active');
-        mobile.classList.remove('active');
     });
 });
 
