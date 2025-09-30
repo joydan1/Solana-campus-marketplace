@@ -1,24 +1,37 @@
+// cart.js
 document.addEventListener("DOMContentLoaded", () => {
-  const addToCartButtons = document.querySelectorAll(".add-to-cart");
+  const cartTableBody = document.querySelector("#cart-table tbody");
+  const grandTotalEl = document.getElementById("grandTotal");
+  let cart = JSON.parse(localStorage.getItem("cart")) || [];
 
-  addToCartButtons.forEach(btn => {
+  if(cart.length === 0){
+    cartTableBody.innerHTML = `<tr><td colspan="5" style="text-align:center;">Your cart is empty</td></tr>`;
+    grandTotalEl.innerText = "0.000";
+    return;
+  }
+
+  cartTableBody.innerHTML = cart.map((item, index) => `
+    <tr>
+      <td><img src="img_orig/phone${item.id}.jpeg" width="50" alt="${item.name}"></td>
+      <td>${item.name}</td>
+      <td>${item.price.toFixed(3)}</td>
+      <td>${item.quantity}</td>
+      <td><button class="remove-item" data-index="${index}">Remove</button></td>
+    </tr>
+  `).join("");
+
+  // Calculate total
+  const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  grandTotalEl.innerText = total.toFixed(3);
+
+  // Remove item functionality
+  const removeButtons = document.querySelectorAll(".remove-item");
+  removeButtons.forEach(btn => {
     btn.addEventListener("click", () => {
-      const id = btn.dataset.id;
-      const name = btn.dataset.name;
-      const price = parseFloat(btn.dataset.price);
-
-      let cart = JSON.parse(localStorage.getItem("cart")) || [];
-
-      // Check if item exists, increase quantity
-      const existingItem = cart.find(item => item.id === id);
-      if(existingItem){
-        existingItem.quantity += 1;
-      } else {
-        cart.push({ id, name, price, quantity: 1 });
-      }
-
+      const index = parseInt(btn.dataset.index);
+      cart.splice(index, 1);
       localStorage.setItem("cart", JSON.stringify(cart));
-      alert(`${name} added to cart!`);
+      location.reload(); // reload to update table
     });
   });
 });
