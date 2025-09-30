@@ -1,303 +1,144 @@
-<script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.73.0/lib/index.iife.min.js"></script>
+// ----------------------
+// Solana + Supabase Marketplace Script
+// ----------------------
 
-/* ===
-====== Imports ========= */
-import { supabase } from './supabaseclient.js';
-import { connectWallet, buyItem } from './wallet.js';
+// Phantom wallet connection
+let connectedPubKey = null;
 
-/* ========= Navbar Mobile Toggle ========= */
-const bar = document.getElementById('bar');
-const nav = document.getElementById('navbar');
-const close = document.getElementById('close');
-const mobile = document.getElementById('mobile');
+// Solana setup
+const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("devnet"), "confirmed");
 
-if (bar) bar.addEventListener('click', () => {
-    console.log('clicked');
-    nav.classList.add('active');
-});
-if (close) close.addEventListener('click', () => {
-    console.log('closed');
-    nav.classList.remove('active');
-});
+// Supabase setup
+const SUPABASE_URL = "https://YOUR_SUPABASE_URL.supabase.co";
+const SUPABASE_KEY = "YOUR_SUPABASE_ANON_KEY";
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-/* ========= Navbar Link Auto-Close ========= */
-document.querySelectorAll('#navbar a').forEach(link => {
-    link.addEventListener('click', () => {
-        nav.classList.remove('active');
-    });
-});
+// ----------------------
+// Connect Phantom Wallet
+// ----------------------
+async function connectWallet() {
+  if (!window.solana || !window.solana.isPhantom) {
+    alert("Phantom wallet not found. Please install Phantom.");
+    return;
+  }
+  try {
+    const resp = await window.solana.connect();
+    connectedPubKey = resp.publicKey.toString();
+    document.getElementById("walletAddress").innerText = `Connected: ${connectedPubKey}`;
+    console.log("Connected wallet:", connectedPubKey);
+  } catch (err) {
+    console.error("Wallet connection failed:", err);
+  }
+}
 
-/* ========= Product Image Switch ========= */
-document.querySelectorAll('.pro').forEach(product => {
-    const mainImg = product.querySelector('img');
-    product.querySelectorAll('.small-img').forEach(smallImg => {
-        smallImg.addEventListener('click', () => mainImg.src = smallImg.src);
-    });
-});
+// ----------------------
+// Add Item to Supabase
+// ----------------------
+async function addItem(event) {
+  event.preventDefault();
+  if (!connectedPubKey) return alert("Connect wallet first!");
 
-/* ========= Pagination Links ========= */
-document.querySelectorAll('#pagination a').forEach((link, index) => {
-    link.addEventListener('click', e => {
-        e.preventDefault();
-        if(index===0) window.location.href='index.html';
-        else if(index===1) window.location.href='product.html';
-        else if(link.querySelector('i')) window.location.href='auction.html';
-    });
-});
+  const name = document.getElementById("itemName").value;
+  const description = document.getElementById("itemDesc").value;
+  const price = parseFloat(document.getElementById("price").value); // in SOL
+  const image = document.getElementById("itemImage").value;
 
-/* ========= Auction Item Upload ========= */
-const uploadItemForm = document.getElementById('upload-item-form');
-const auctionItemsList = document.getElementById('auction-items');
-const uploadMessage = document.getElementById('upload-message');
+  const { data, error } = await supabase
+    .from("items")
+    .insert([{ name, description, price, image, seller: connectedPubKey, sold: false }]);
 
-if(uploadItemForm){
-  uploadItemForm.addEventListener('submit', async e => {
-    e.preventDefault();
+  if (error) {
+    console.error(error);
+    alert("Error adding item!");
+  } else {
+    alert("✅ Item listed!");
+    loadItems();
+  }
+}
 
-    const itemName = document.getElementById('item-name').value.trim();
-    const itemDescription = document.getElementById('item-description').value.trim();
-    const itemPrice = document.getElementById('item-price').value.trim();
-    const itemImage = document.getElementById('item-image').files[0];
-    const auctionEndDate = document.getElementById('auction-end-date').value;
+// ----------------------
+// Load Items from Supabase
+// ----------------------
+async function loadItems() {
+  const { data: items, error } = await supabase.from("items").select("*").eq("sold", false);
 
-    if(!itemName||!itemDescription||!itemPrice||!itemImage||!auctionEndDate){
-        uploadMessage.textContent = 'Please fill out all fields';
-        return;
-    }
-    if(!itemImage.type.startsWith('image/')){
-        uploadMessage.textContent = 'Invalid file type. Only images allowed';
-        return;
-    }
+  if (error) {
+    console.error(error);
+    return;
+  }
 
-    try{
-      const formData = new FormData();
-      formData.append('itemName', itemName);
-      formData.append('itemDescription', itemDescription);
-      formData.append('itemPrice', itemPrice);
-      formData.append('itemImage', itemImage);
-      formData.append('auctionEndDate', auctionEndDate);
+  const container = document.getElementById("itemsList");
+  container.innerHTML = "";
 
-      const response = await fetch('/api/upload-item',{method:'POST', body:formData});
-      const data = await response.json();
-
-      if(response.ok){
-          uploadMessage.style.color='green';
-          uploadMessage.textContent='✅ Item uploaded successfully!';
-          uploadItemForm.reset();
-
-          // Add new item to DOM
-          const li = document.createElement('li');
-          li.innerHTML = `
-            <h2>${data.itemName}</h2>
-            <p>${data.itemDescription}</p>
-            <p>Starting Price: ${data.itemPrice} SOL</p>
-            <img src="${data.itemImage}" alt="${data.itemName}">
-            <p>Auction End Date: ${data.auctionEndDate}</p>
-            <button class="buyBtn" data-item-pubkey="${data.itemPubkey}" data-seller-pubkey="${data.sellerPubkey || ''}" disabled>Buy Now</button>
-          `;
-          auctionItemsList.appendChild(li);
-
-          attachBuyButtons(); // Ensure button is clickable
-      } else {
-          uploadMessage.style.color='red';
-          uploadMessage.textContent=data.message||'Upload failed';
-      }
-    } catch(err){
-        console.error(err);
-        uploadMessage.style.color='red';
-        uploadMessage.textContent='Upload failed. Check console';
-    }
+  items.forEach((item) => {
+    const div = document.createElement("div");
+    div.className = "item-card";
+    div.innerHTML = `
+      <img src="${item.image}" alt="${item.name}" />
+      <h3>${item.name}</h3>
+      <p>${item.description}</p>
+      <p><strong>Price:</strong> ${item.price} SOL</p>
+      <button onclick="buyItem('${item.id}', '${item.seller}', ${item.price})">Buy</button>
+      ${connectedPubKey === item.seller ? `<button onclick="removeItem('${item.id}')">Remove</button>` : ""}
+    `;
+    container.appendChild(div);
   });
 }
 
-/* ========= Buy Button Handler ========= */
-function attachBuyButtons(){
-    document.querySelectorAll('.buyBtn').forEach(btn=>{
-        if(btn.dataset.listenerAttached) return; // avoid duplicate listeners
-        btn.dataset.listenerAttached = true;
-        btn.addEventListener('click', async ()=>{
-            const itemPubkey = btn.dataset.itemPubkey;
-            const sellerPubkey = btn.dataset.sellerPubkey || null;
-            if(!itemPubkey) return showToast('❌ Missing item public key!');
-            try{
-                await buyItem(itemPubkey, sellerPubkey);
-                showToast('✅ Purchase successful!');
-            } catch(err){
-                console.error(err);
-                showToast('❌ Purchase failed. Check console.');
-            }
-        });
-    });
+// ----------------------
+// Buy Item (SOL Transfer)
+// ----------------------
+async function buyItem(id, seller, price) {
+  if (!connectedPubKey) return alert("Connect wallet first!");
+
+  try {
+    const fromPubkey = window.solana.publicKey;
+    const toPubkey = new solanaWeb3.PublicKey(seller);
+    const lamports = Math.round(price * solanaWeb3.LAMPORTS_PER_SOL);
+
+    const tx = new solanaWeb3.Transaction().add(
+      solanaWeb3.SystemProgram.transfer({ fromPubkey, toPubkey, lamports })
+    );
+
+    tx.feePayer = fromPubkey;
+    tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+
+    const signed = await window.solana.signTransaction(tx);
+    const sig = await connection.sendRawTransaction(signed.serialize());
+    await connection.confirmTransaction(sig, "confirmed");
+
+    alert(`✅ Purchase successful!\nTx: ${sig}`);
+
+    // Mark item as sold in Supabase
+    await supabase.from("items").update({ sold: true }).eq("id", id);
+
+    loadItems();
+  } catch (err) {
+    console.error("Transaction failed:", err);
+    alert("❌ Transaction failed!");
+  }
 }
 
-/* ========= Registration Form ========= */
-const registerForm = document.getElementById('register-form');
-const errorMessage = document.getElementById('error-message');
-if(registerForm){
-  registerForm.addEventListener('submit', async e=>{
-    e.preventDefault();
-    const username=document.getElementById('username').value.trim();
-    const email=document.getElementById('email').value.trim();
-    const password=document.getElementById('password').value;
-    const confirmPassword=document.getElementById('confirm-password').value;
+// ----------------------
+// Remove Item (Seller only)
+// ----------------------
+async function removeItem(id) {
+  const { error } = await supabase.from("items").delete().eq("id", id);
 
-    if(!username||!email||!password||!confirmPassword){
-        errorMessage.textContent='Please fill out all fields';
-        return;
-    }
-    if(password!==confirmPassword){
-        errorMessage.textContent='Passwords do not match';
-        return;
-    }
-
-    try{
-        const response = await fetch('/api/register',{
-            method:'POST',
-            headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({username,email,password})
-        });
-        const data = await response.json();
-        if(response.ok){
-            errorMessage.style.color='green';
-            errorMessage.textContent='✅ Registration successful!';
-            registerForm.reset();
-        } else {
-            errorMessage.style.color='red';
-            errorMessage.textContent=data.message||'Error registering user';
-        }
-    } catch(err){
-        console.error(err);
-        errorMessage.style.color='red';
-        errorMessage.textContent='Error registering user. Check console.';
-    }
-  });
+  if (error) {
+    console.error(error);
+    alert("Error removing item!");
+  } else {
+    alert("✅ Item removed!");
+    loadItems();
+  }
 }
 
-/* ========= Solana Wallet Integration ========= */
-window.addEventListener('DOMContentLoaded', ()=>{
-    const connectWalletBtn = document.getElementById("connectWalletBtn");
-    if(!connectWalletBtn) return;
+// ----------------------
+// Events
+// ----------------------
+document.getElementById("connectBtn").addEventListener("click", connectWallet);
+document.getElementById("addItemForm").addEventListener("submit", addItem);
 
-    const updateButton = (pubKey)=>{
-        connectWalletBtn.textContent = `Connected: ${pubKey.slice(0,4)}...${pubKey.slice(-4)}`;
-        document.querySelectorAll('.buyBtn').forEach(btn=>btn.disabled=false);
-    };
-
-    if(window.solana && window.solana.isPhantom && window.solana.isConnected){
-        updateButton(window.solana.publicKey.toString());
-    }
-
-    connectWalletBtn.addEventListener('click', async ()=>{
-        if(!window.solana || !window.solana.isPhantom){
-            alert("Phantom wallet not found! Please install it.");
-            window.open("https://phantom.app/", "_blank");
-            return;
-        }
-        try{
-            const pubKey = await connectWallet();
-            updateButton(pubKey);
-        } catch(err){
-            console.error("Wallet connection failed:",err);
-            alert("Wallet connection failed. Check console.");
-        }
-    });
-
-    if(window.solana){
-        window.solana.on("connect", (publicKey)=>{
-            updateButton(publicKey.toString());
-        });
-        window.solana.on("disconnect", ()=>{
-            connectWalletBtn.textContent="Connect Wallet";
-            document.querySelectorAll('.buyBtn').forEach(btn=>btn.disabled=true);
-        });
-    }
-});
-
-/* ========= Cart Functionality ========= */
-let cartCount = 0;
-const cartIcon = document.querySelector('#Lg-bag a');
-const cartBadge = document.createElement('span');
-cartBadge.id='cart-count';
-cartBadge.textContent=cartCount;
-cartBadge.style.cssText=`position:absolute;top:-10px;right:-10px;background:red;color:white;border-radius:50%;padding:2px 6px;font-size:12px;`;
-cartIcon.style.position='relative';
-cartIcon.appendChild(cartBadge);
-
-document.querySelectorAll('.fa-basket-shopping').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-        cartCount++;
-        cartBadge.textContent=cartCount;
-        const productName = btn.closest('.pro').querySelector('h5').textContent;
-        alert(`Added "${productName}" to cart!`);
-    });
-});
-
-/* ========= Add to Cart from Products ========= */
-document.querySelectorAll('.pro a').forEach(btn=>{
-    btn.addEventListener('click', e=>{
-        e.preventDefault();
-        const card = btn.closest('.pro');
-        const title = card.querySelector('h5').innerText;
-        const price = parseFloat(card.querySelector('h4').innerText.replace('Sol','').trim());
-        const imgSrc = card.querySelector('img').src;
-
-        let cart = JSON.parse(localStorage.getItem('cart')) || [];
-        cart.push({ title, price, imgSrc, quantity:1 });
-        localStorage.setItem('cart', JSON.stringify(cart));
-
-        showToast(`✅ Added "${title}" to cart!`);
-    });
-});
-
-/* ========= Product Modal ========= */
-const modal = document.createElement('div');
-modal.id='product-modal';
-modal.style.cssText=`position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);display:none;justify-content:center;align-items:center;z-index:1000;`;
-document.body.appendChild(modal);
-
-const modalImg = document.createElement('img');
-modalImg.style.cssText=`max-width:80%;max-height:80%;border-radius:10px;box-shadow:0 0 20px white;`;
-modal.appendChild(modalImg);
-
-modal.addEventListener('click', ()=>modal.style.display='none');
-document.querySelectorAll('.pro img').forEach(img=>{
-    img.style.cursor='pointer';
-    img.addEventListener('click', ()=>{
-        modalImg.src=img.src;
-        modal.style.display='flex';
-    });
-});
-
-/* ========= Newsletter Subscription ========= */
-const newsletterForm = document.getElementById('newsletter-form');
-const newsletterMessage = document.getElementById('newsletter-message');
-if(newsletterForm){
-    newsletterForm.addEventListener('submit', async e=>{
-        e.preventDefault();
-        const email = document.getElementById('newsletter-email').value.trim();
-        if(!email){ newsletterMessage.textContent="Please enter a valid email."; return;}
-        try{
-            const {data,error} = await supabase.from('newsletter').insert([{email}]);
-            if(error){ console.error(error); newsletterMessage.textContent="Subscription failed. Try again."; }
-            else{ newsletterMessage.textContent="✅ Successfully subscribed!"; newsletterForm.reset(); }
-        }catch(err){ console.error(err); newsletterMessage.textContent="Subscription failed. Check console."; }
-    });
-}
-
-/* ========= Toast Notification ========= */
-function showToast(message,duration=3000){
-    const container = document.getElementById('toast-container');
-    if(!container) return;
-    const toast=document.createElement('div');
-    toast.textContent=message;
-    toast.style.cssText=`background:rgba(0,0,0,0.8);color:#fff;padding:10px 15px;margin-top:10px;border-radius:5px;box-shadow:0 2px 10px rgba(0,0,0,0.5);animation:slideIn 0.3s ease forwards;font-family:sans-serif;`;
-    container.appendChild(toast);
-    setTimeout(()=>{
-        toast.style.opacity='0';
-        toast.style.transition='opacity 0.5s';
-        setTimeout(()=>container.removeChild(toast),500);
-    },duration);
-}
-
-/* ========= Initialize Buy Buttons for Existing Items ========= */
-attachBuyButtons();
+// Auto-load items on page load
+window.onload = loadItems;
