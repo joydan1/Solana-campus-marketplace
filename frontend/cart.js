@@ -1,7 +1,7 @@
-// cart.js
 document.addEventListener("DOMContentLoaded", () => {
   const cartTableBody = document.querySelector("#cart-table tbody");
   const grandTotalEl = document.getElementById("grandTotal");
+  const checkoutBtn = document.getElementById("checkout-btn");
   let cart = JSON.parse(localStorage.getItem("cart")) || [];
 
   if(cart.length === 0){
@@ -10,7 +10,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return;
   }
 
-  cartTableBody.innerHTML = cart.map((item, index) => `
+  cartTableBody.innerHTML = cart.map((item,index) => `
     <tr>
       <td><img src="img_orig/phone${item.id}.jpeg" width="50" alt="${item.name}"></td>
       <td>${item.name}</td>
@@ -21,17 +21,52 @@ document.addEventListener("DOMContentLoaded", () => {
   `).join("");
 
   // Calculate total
-  const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const total = cart.reduce((sum,item)=> sum + item.price * item.quantity, 0);
   grandTotalEl.innerText = total.toFixed(3);
 
-  // Remove item functionality
-  const removeButtons = document.querySelectorAll(".remove-item");
-  removeButtons.forEach(btn => {
-    btn.addEventListener("click", () => {
+  // Remove items
+  document.querySelectorAll(".remove-item").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
       const index = parseInt(btn.dataset.index);
-      cart.splice(index, 1);
+      cart.splice(index,1);
       localStorage.setItem("cart", JSON.stringify(cart));
-      location.reload(); // reload to update table
+      location.reload();
     });
+  });
+
+  // Checkout button
+  checkoutBtn.addEventListener("click", async ()=>{
+    if(!window.solana || !window.solana.isConnected){
+      alert("Please connect wallet first!");
+      return;
+    }
+    if(cart.length===0){
+      alert("Cart is empty!");
+      return;
+    }
+
+    const totalSOL = cart.reduce((sum,item)=>sum + item.price*item.quantity,0);
+    const seller = "SellerWalletAddressHere"; // replace with actual
+
+    try{
+      const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('devnet'),'confirmed');
+      const transaction = new solanaWeb3.Transaction().add(
+        solanaWeb3.SystemProgram.transfer({
+          fromPubkey: window.solana.publicKey,
+          toPubkey: new solanaWeb3.PublicKey(seller),
+          lamports: totalSOL*solanaWeb3.LAMPORTS_PER_SOL
+        })
+      );
+
+      const {signature} = await window.solana.signAndSendTransaction(transaction);
+      await connection.confirmTransaction(signature,'confirmed');
+      alert("Payment successful! Signature: "+signature);
+
+      localStorage.removeItem("cart");
+      location.reload();
+    }catch(err){
+      console.error(err);
+      alert("Payment failed. See console.");
+    }
   });
 });
