@@ -1,53 +1,49 @@
-/* =======================
-   GLOBAL / RESET
-======================= */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-family: Arial, sans-serif;
-}
+/* ==================== DESKTOP STYLES ==================== */
 
-body {
-  background-color: #fff;
-  color: #000;
-  line-height: 1.6;
-}
-
-/* =======================
-   HEADER / NAVBAR
-======================= */
+/* Header */
 #header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
   padding: 20px 80px;
   background: #660033;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.6);
+  z-index: 999;
   position: sticky;
   top: 0;
-  z-index: 1000;
-}
-
-#header .logo {
-  width: 120px;
+  left: 0;
 }
 
 #navbar {
   display: flex;
-  list-style: none;
   align-items: center;
-  gap: 25px;
+  justify-content: center;
+  height: auto;
+  width: auto;
+  box-shadow: none;
+  padding: 0;
+  position: static;
+  transition: none;
+  z-index: 1000;
+}
+
+#navbar li {
+  list-style: none;
+  padding: 0 20px;
+  position: relative;
+  margin-bottom: 0;
 }
 
 #navbar li a {
   text-decoration: none;
+  font-size: 16px;
   font-weight: 600;
   color: white;
   transition: 0.3s ease;
 }
 
-#navbar li a:hover {
+#navbar li a:hover,
+#navbar li a:active {
   color: orange;
 }
 
@@ -59,120 +55,72 @@ body {
   padding: 8px 16px;
   border-radius: 4px;
   cursor: pointer;
-  transition: 0.3s ease;
 }
-
 #connectWalletBtn:hover {
   background: orange;
   color: #660033;
 }
 
-/* Hamburger Menu */
 #mobile {
   display: none;
-  font-size: 24px;
-  cursor: pointer;
 }
 
-#navbar.active {
-  right: 0;
-}
-
-/* =======================
-   PRODUCT PAGE
-======================= */
+/* Product Page */
 #prodetails {
   display: flex;
-  gap: 50px;
-  margin: 40px 80px;
+  gap: 40px;
+  margin-top: 20px;
 }
 
-.single-pro-image {
-  width: 50%;
+#prodetails .single-pro-image {
+  width: 40%;
 }
 
-.single-pro-image img {
+#prodetails .single-pro-image img {
   width: 100%;
-  max-width: 500px;
-  height: auto;
-  border-radius: 12px;
+  object-fit: contain;
+}
+
+#prodetails .single-pro-details {
+  width: 50%;
 }
 
 .small-img-group {
   display: flex;
   justify-content: space-between;
-  margin-top: 10px;
+  margin-top: 15px;
 }
 
 .small-img-col img {
-  width: 100px;
   cursor: pointer;
-  border: 2px solid transparent;
+  width: 100%;
+  border: 1px solid #ddd;
   border-radius: 6px;
-  transition: 0.3s ease;
 }
 
-.small-img-col img:hover {
-  border-color: orange;
-}
-
-.single-pro-details {
-  width: 50%;
-}
-
-.single-pro-details h2 {
-  font-size: 26px;
-  margin: 15px 0;
-}
-
-.single-pro-details input[type="number"] {
-  width: 60px;
-  padding: 5px;
-  margin-right: 10px;
-}
-
-.product-actions button {
-  margin-right: 10px;
-}
-
-/* =======================
-   CART PAGE
-======================= */
-#cart {
-  margin: 40px 80px;
-}
-
-#cart h1 {
-  margin-bottom: 20px;
-  color: #660033;
-}
-
-#cart-table {
+/* Cart Page */
+#cart table {
   width: 100%;
   border-collapse: collapse;
 }
 
-#cart-table th,
-#cart-table td {
+#cart table th,
+#cart table td {
   padding: 12px;
   text-align: center;
-  border: 1px solid #ddd;
-  font-size: 14px;
+  border-bottom: 1px solid #ddd;
 }
 
-#cart-table img {
-  width: 70px;
-  height: auto;
-}
-
-#grandTotal {
-  font-weight: 700;
-  color: #660033;
+#cart table img {
+  width: 80px;
+  object-fit: cover;
 }
 
 .cart-summary {
   margin-top: 20px;
-  text-align: right;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .cart-summary button {
@@ -180,7 +128,7 @@ body {
   color: orange;
   padding: 10px 20px;
   border: none;
-  border-radius: 5px;
+  border-radius: 4px;
   cursor: pointer;
 }
 
@@ -189,90 +137,87 @@ body {
   color: #660033;
 }
 
-/* =======================
-   AUCTION PAGE
-======================= */
-#upload-item-form {
-  margin: 40px 80px;
-  background: #f8f8f8;
-  padding: 20px;
-  border-radius: 12px;
-}
-
-#upload-item-form input,
-#upload-item-form textarea {
-  width: 100%;
-  padding: 10px;
-  margin-bottom: 15px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-}
-
-.diff {
-  background-color: #660033;
-  color: orange;
-  padding: 10px 20px;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.diff:hover {
-  background-color: orange;
-  color: #660033;
-}
-
-/* =======================
-   MEDIA QUERIES
-======================= */
-@media(max-width: 799px) {
+/* ==================== MEDIUM SCREEN (799px - 478px) ==================== */
+@media (max-width: 799px) {
   #header {
-    padding: 15px 30px;
+    padding: 20px 40px;
   }
 
   #navbar {
+    flex-direction: column;
     position: fixed;
     top: 0;
     right: -300px;
-    height: 100vh;
     width: 250px;
-    flex-direction: column;
+    height: 100vh;
     background-color: #660033;
     padding-top: 80px;
-    transition: 0.3s;
-    z-index: 999;
+    transition: right 0.3s ease;
+    z-index: 1000;
+  }
+
+  #navbar.active {
+    right: 0;
   }
 
   #mobile {
-    display: block;
+    display: flex;
+    font-size: 24px;
+    cursor: pointer;
+    color: white;
   }
 
   #prodetails {
     flex-direction: column;
-    margin: 20px;
   }
 
-  #cart {
-    margin: 20px;
+  #prodetails .single-pro-image,
+  #prodetails .single-pro-details {
+    width: 100%;
+    margin-right: 0;
   }
 
-  #upload-item-form {
-    margin: 20px;
+  #cart table th,
+  #cart table td {
+    font-size: 12px;
+    padding: 8px;
+  }
+
+  #cart table img {
+    width: 60px;
   }
 }
 
-@media(max-width: 477px) {
-  #prodetails input[type="number"] {
+/* ==================== SMALL SCREEN (477px and below) ==================== */
+@media (max-width: 477px) {
+  #header {
+    padding: 10px 20px;
+  }
+
+  #prodetails {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  #prodetails .single-pro-image img {
+    max-height: 300px;
+  }
+
+  #cart table img {
     width: 50px;
   }
 
-  #cart-table th,
-  #cart-table td {
-    font-size: 12px;
-    padding: 8px;
+  #cart-summary {
+    flex-direction: column;
+    gap: 10px;
   }
 
   #connectWalletBtn {
     font-size: 14px;
     padding: 6px 12px;
+  }
+
+  #mobile {
+    display: flex;
   }
 }
