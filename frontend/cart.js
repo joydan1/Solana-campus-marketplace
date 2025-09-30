@@ -1,24 +1,35 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const addToCartButtons = document.querySelectorAll(".add-to-cart");
+  const cartRoot = document.getElementById("cartRoot");
+  let cart = JSON.parse(localStorage.getItem("cart")) || [];
 
-  addToCartButtons.forEach(btn => {
+  if(cart.length === 0){
+    cartRoot.innerHTML = "<p>Your cart is empty.</p>";
+    return;
+  }
+
+  cartRoot.innerHTML = cart.map(item => `
+    <div class="cart-item">
+      <span>${item.name}</span>
+      <span>${item.price} SOL</span>
+      <span>Qty: ${item.quantity}</span>
+      <button class="remove-item" data-id="${item.id}">Remove</button>
+    </div>
+  `).join("");
+
+  // Remove item
+  const removeButtons = document.querySelectorAll(".remove-item");
+  removeButtons.forEach(btn => {
     btn.addEventListener("click", () => {
       const id = btn.dataset.id;
-      const name = btn.dataset.name;
-      const price = parseFloat(btn.dataset.price);
-
-      let cart = JSON.parse(localStorage.getItem("cart")) || [];
-
-      // Check if item already exists, increase quantity
-      const existingItem = cart.find(item => item.id === id);
-      if(existingItem){
-        existingItem.quantity += 1;
-      } else {
-        cart.push({ id, name, price, quantity: 1 });
-      }
-
+      cart = cart.filter(item => item.id !== id);
       localStorage.setItem("cart", JSON.stringify(cart));
-      alert(`${name} added to cart!`);
+      location.reload();
     });
   });
+
+  // Show total
+  const total = cart.reduce((sum,item)=> sum + item.price * item.quantity, 0);
+  const totalDiv = document.createElement("div");
+  totalDiv.innerHTML = `<h3>Total: ${total.toFixed(3)} SOL</h3>`;
+  cartRoot.appendChild(totalDiv);
 });
