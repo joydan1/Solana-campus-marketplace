@@ -4,8 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Solana Students Africa Project</title>
+
 <link rel="stylesheet" href="./style.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+
+<!-- Solana Web3.js -->
+<script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.73.0/lib/index.iife.min.js"></script>
+
 </head>
 <body>
 
@@ -33,45 +38,43 @@
     <img src="img_orig/phone4.jpeg" width ="100%" id="main-img" alt="">
     <div class="small-img-group">
         <div class="small-img-col">
-            <img src="img_orig/phone4.jpeg" width = "100%" class="small-img" alt="">
+            <img src="img_orig/phone4.jpeg" width="100%" class="small-img" alt="">
         </div>
         <div class="small-img-color">
-            <img src="img_orig/phone6.jpg" width:100% class="small-img" alt="">
+            <img src="img_orig/phone6.jpg" width="100%" class="small-img" alt="">
         </div>
         <div class="small-img-color">
-            <img src="img_orig/phone2.png" width:100% class="small-img" alt="">
+            <img src="img_orig/phone2.png" width="100%" class="small-img" alt="">
         </div>
         <div class="small-img-color">
-            <img src="img_orig/phone5.jpg" width:100% class="small-img" alt="">
+            <img src="img_orig/phone5.jpg" width="100%" class="small-img" alt="">
         </div>
     </div>
 </div>
 
+<div class="single-pro-details">
+  <h4>PRODUCTS</h4>
+  <h4>IPHONE</h4>
+  <h2>0.678 SOL</h2>
+  <input type="number" value="1" min="1">
 
-  <div class="single-pro-details">
-    <h4>PRODUCTS</h4>
-    <h4>IPHONE</h4>
-    <h2>0.678 SOL</h2>
-    <input type="number" value="1" min="1">
-
-    <div class="product-actions">
-      <button id="connectWalletBtn" class="normal">Connect Wallet</button>
-      <button id="buyBtn" 
-              class="normal" 
-              data-id="1" 
-              data-price="0.678" 
-              data-seller="SellerWalletAddressHere">
-        Buy (Pay in SOL)
-      </button>
-      
-    </div>
-
-    <div id="txStatus" style="margin-top:12px; white-space:pre-wrap;"></div>
-    <div id="productRoot" style="margin-top:12px;"></div>
-
-    <h4>Product Details</h4>
-    <span>The iPhone is a sleek and powerful smartphone with advanced camera capabilities, intuitive interface, and seamless integration with other Apple devices. Perfect for capturing life's moments and staying connected on the go.</span>
+  <div class="product-actions">
+    <button id="connectWalletBtn" class="normal">Connect Wallet</button>
+    <button id="buyBtn" 
+            class="normal" 
+            data-id="1" 
+            data-price="0.678" 
+            data-seller="SellerWalletAddressHere">
+      Buy (Pay in SOL)
+    </button>
   </div>
+
+  <div id="txStatus" style="margin-top:12px; white-space:pre-wrap;"></div>
+  <div id="productRoot" style="margin-top:12px;"></div>
+
+  <h4>Product Details</h4>
+  <span>The iPhone is a sleek and powerful smartphone with advanced camera capabilities, intuitive interface, and seamless integration with other Apple devices. Perfect for capturing life's moments and staying connected on the go.</span>
+</div>
 </section>
 
 <!-- Newsletter -->
@@ -88,27 +91,20 @@
 </section>
 
 <!-- Scripts -->
-<script type="module" src="./product-buy.js"></script>
-<script type="module" src="./wallet.js"></script>
+<script src="./script.js"></script>
+<script src="./wallet.js"></script>
+
 <script>
-  var mainimg = document.getElementById("main-img");
-  var smallimg= document.getElementsByClassName("small-img");
-  
-  smallimg[0].onclick = function() {
-  mainimg.src = smallimg[0].src;
-}
-smallimg[1].onclick = function() {
-mainimg.src = smallimg[1].src;
-}
+// Image gallery functionality
+var mainimg = document.getElementById("main-img");
+var smallimg= document.getElementsByClassName("small-img");
 
-smallimg[2].onclick = function() {
-  mainimg.src = smallimg[2].src;
-}
-
-smallimg[3].onclick = function() {
-  mainimg.src = smallimg[3].src;
+for(let i=0; i<smallimg.length; i++){
+    smallimg[i].onclick = function() {
+        mainimg.src = smallimg[i].src;
+    }
 }
 </script>
-<script src="./script.js"></script>
+
 </body>
 </html>
