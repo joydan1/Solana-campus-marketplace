@@ -1,62 +1,30 @@
 // wallet.js
-import { PublicKey, Connection, clusterApiUrl } from "@solana/web3.js";
 
-let provider = null;
-let walletPublicKey = null;
-
-const connectWalletBtn = document.querySelectorAll("#connectWalletBtn");
-const txStatus = document.getElementById("txStatus");
-
-// Function to get provider (Phantom wallet)
-export function getProvider() {
-  if ("solana" in window) {
-    provider = window.solana;
-    if (provider.isPhantom) return provider;
-  } else {
-    alert("Phantom wallet not found. Install it from https://phantom.app/");
-    return null;
-  }
-}
-
-// Connect wallet function
+// Function to connect wallet
 export async function connectWallet() {
-  const wallet = getProvider();
-  if (!wallet) return;
-
-  try {
-    const resp = await wallet.connect();
-    walletPublicKey = resp.publicKey.toString();
-    console.log("Connected wallet:", walletPublicKey);
-    updateConnectButtons(walletPublicKey);
-  } catch (err) {
-    console.error("Wallet connection failed:", err);
-  }
-}
-
-// Update all Connect Wallet buttons on the page
-function updateConnectButtons(publicKey) {
-  connectWalletBtn.forEach(btn => {
-    btn.textContent = `${publicKey.slice(0, 4)}...${publicKey.slice(-4)}`;
-    btn.disabled = true;
-    btn.style.cursor = "default";
-  });
-}
-
-// Attach click events for all Connect Wallet buttons
-connectWalletBtn.forEach(btn => {
-  btn.addEventListener("click", connectWallet);
-});
-
-// Automatically detect if wallet is already connected
-window.addEventListener("load", async () => {
-  const wallet = getProvider();
-  if (wallet) {
+  if (window.solana && window.solana.isPhantom) {
     try {
-      const resp = await wallet.connect({ onlyIfTrusted: true });
-      walletPublicKey = resp.publicKey.toString();
-      updateConnectButtons(walletPublicKey);
+      const response = await window.solana.connect();
+      console.log("Connected wallet:", response.publicKey.toString());
+      // Optional: show connection status on page
+      document.querySelectorAll(".walletStatus").forEach(el => {
+        el.textContent = `Wallet Connected: ${response.publicKey.toString()}`;
+      });
     } catch (err) {
-      console.log("Wallet not connected yet.");
+      console.error("User rejected the connection", err);
+      alert("Connection rejected!");
     }
+  } else {
+    alert("Phantom Wallet not found! Please install it.");
   }
+}
+
+// Attach event listeners to all wallet buttons
+document.addEventListener("DOMContentLoaded", () => {
+  const walletButtons = document.querySelectorAll(".connectWalletBtn");
+  walletButtons.forEach(btn => {
+    btn.addEventListener("click", () => {
+      connectWallet();
+    });
+  });
 });
