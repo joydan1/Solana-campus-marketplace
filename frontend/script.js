@@ -9,8 +9,8 @@ let connectedPubKey = null;
 const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("devnet"), "confirmed");
 
 // Supabase setup
-const SUPABASE_URL = "https://YOUR_SUPABASE_URL.supabase.co";
-const SUPABASE_KEY = "YOUR_SUPABASE_ANON_KEY";
+const SUPABASE_URL = "https://jlclcgonwsvnlpyholvd.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpsY2xjZ29ud3N2bmxweWhvbHZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2NTY2MjQsImV4cCI6MjA3NDIzMjYyNH0.JHx0Q7HcOjS4lsw2GXwU_WHrICQ0it-bhd0Z64ZoBPY";
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ----------------------
